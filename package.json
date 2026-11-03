@@ -1,0 +1,17 @@
+{
+  "name": "spicetify-custom-background-native",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Custom Spotify backgrounds, glass panels, presets, Canvas and native Spotify lyrics. No companion extensions.",
+  "repository": "github:stepashilochvostov467/spicetify-custom-background-native",
+  "homepage": "https://github.com/stepashilochvostov467/spicetify-custom-background-native#readme",
+  "bugs": "https://github.com/stepashilochvostov467/spicetify-custom-background-native/issues",
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "test": "node tests/test-v3.cjs && node tests/test-v4.cjs && node tests/test-panel-background.cjs && node tests/performance.cjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.55.0"
+  },
+  "license": "MIT"
+}
