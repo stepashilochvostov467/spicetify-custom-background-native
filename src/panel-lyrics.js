@@ -34,7 +34,7 @@
                 const data=await this.spotifyPanelData(uri);
                 if(!current())return;
                 this.panelLyricLines=panelLines(data);
-                this.panelLyricLanguage=/^[a-z]{2,3}(?:-[a-z]{2})?$/i.test(data?.lyrics?.language||'')?data.lyrics.language.toLowerCase():'autodetect';
+                this.panelLyricLanguage=this.lyricLanguage(data?.lyrics?.language,this.panelLyricLines);
                 status.textContent=!this.panelLyricLines.length?'Для этой песни текст не найден':this.panelLyricLines.some(line=>line.start!==null)?'Spotify · синхронизация по строкам':'Spotify · текст без синхронизации';
                 const fragment=document.createDocumentFragment();
                 for(const line of this.panelLyricLines){

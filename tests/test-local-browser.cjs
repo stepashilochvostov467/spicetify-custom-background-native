@@ -15,7 +15,7 @@ fs.mkdirSync('test-results',{recursive:true});
             window.Spicetify={LocalStorage:{get:key=>localStorage.getItem(key),set:(key,value)=>localStorage.setItem(key,value)},showNotification:()=>{},Topbar:{Button:class{constructor(){this.element=document.createElement('button');}}},Platform:{History:{location:{pathname:'/search'},listen:()=>()=>{}}},Player:{data:{item:{uri:'spotify:track:LOCALBROWSER',metadata:{}}},isPlaying:()=>false,getProgress:()=>1000,addEventListener:()=>{},seek:()=>{}},CosmosAsync:{get:async()=>({lyrics:{language:'en',syncType:'LINE_SYNCED',lines:[{startTimeMs:'0',words:currentSynthetic}]}})}};
             window.heartbeats=0;setInterval(()=>heartbeats++,100);
         });
-        await page.addScriptTag({content:fs.readFileSync('custom-bg.js','utf8')});
+        await page.addScriptTag({content:fs.readFileSync(process.argv[3]||'custom-bg.js','utf8')});
         await page.waitForFunction(()=>window.CBP?.app.panelBackdrop);
         const start=Date.now();
         await page.evaluate(()=>{const a=CBP.app;a.translationCache=new Map();a.translationCachePromise=null;a.settings.lyricsSource='spotify';a.settings.lyricsTranslation=true;a.settings.lyricsTranslationEngine='local';a.render();});
