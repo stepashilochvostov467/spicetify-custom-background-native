@@ -26,9 +26,9 @@ async () => {
     ok(a.panelBackdrop.dataset.source==='cover','late Canvas for previous track is discarded');
     a.playPanelURL=originalURL;
     // Make a playable WebM in the fixture; no external media or network.
-    const canvas=document.createElement('canvas');canvas.width=canvas.height=32;const ctx=canvas.getContext('2d'),stream=canvas.captureStream(10),chunks=[];
+    const canvas=document.createElement('canvas');canvas.width=canvas.height=32;const ctx=canvas.getContext('2d'),stream=canvas.captureStream(0),chunks=[];
     const recorder=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp8'}),recorded=new Promise(resolve=>{recorder.ondataavailable=e=>chunks.push(e.data);recorder.onstop=()=>resolve(new Blob(chunks,{type:'video/webm'}));});
-    recorder.start();for(let i=0;i<5;i++){ctx.fillStyle=i%2?'red':'blue';ctx.fillRect(0,0,32,32);await new Promise(r=>setTimeout(r,80));}recorder.stop();const blob=await recorded;stream.getTracks().forEach(t=>t.stop());
+    recorder.start();for(let i=0;i<10;i++){ctx.fillStyle=i%2?'red':'blue';ctx.fillRect(0,0,32,32);stream.getVideoTracks()[0].requestFrame();await new Promise(r=>setTimeout(r,100));}recorder.stop();const blob=await recorded;stream.getTracks().forEach(t=>t.stop());
     const url=URL.createObjectURL(blob);
     Spicetify.Player.data.item={uri:'spotify:track:REALVIDEO',metadata:{image_url:testImage,'canvas.url':url}};
     await a.refreshPanelBackdrop(true);

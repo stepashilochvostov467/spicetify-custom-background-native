@@ -26,7 +26,7 @@
         buildUI() {
             originalBuildUI.call(this);
             const section=document.createElement('div');section.id='cbp-studio';
-            section.innerHTML=`<details open><summary>Конструктор интерфейса</summary>
+            section.innerHTML=`<details><summary>Конструктор интерфейса</summary>
                 ${this.toggle('hidePodcasts','Скрыть подкасты на главной')}${this.toggle('hideRecommendations','Скрыть рекомендации на главной')}
                 ${this.toggle('hideSidebar','Скрыть правую панель')}${this.toggle('hideStore','Скрыть магазин и Premium')}
                 <button data-studio="reset-interface">Вернуть стандартный интерфейс</button></details>
@@ -36,9 +36,6 @@
                 <label class="cbp-row">Шрифт<select data-setting="font"><option value="default">Spotify</option><option value="system">Системный</option></select></label>
                 <label class="cbp-row">Текущий трек<input type="color" data-setting="trackColor"></label><label class="cbp-row">Кнопки плеера<input type="color" data-setting="buttonColor"></label>
                 <details><summary>Дополнительно</summary>${this.slider('Обложка в плеере','playerCover',40,88,1,'px')}${this.slider('Толщина прогресса','progressHeight',2,10,1,'px')}</details></details>
-                <details open><summary>Оформление плейлиста</summary><p id="cbp-route-status" class="cbp-hint"></p>
-                <button data-studio="assign">Назначить выбранный пресет этому плейлисту</button><button data-studio="unassign">Убрать привязку</button>
-                <p class="cbp-hint">Открой плейлист и выбери сохранённое оформление сверху. При уходе с плейлиста вернётся обычное оформление.</p></details>
                 <details><summary>Текст песни в правой панели</summary>
                 <label class="cbp-row">Источник<select data-setting="lyricsSource"><option value="off">Выключен</option><option value="spotify">Spotify</option></select></label>
                 ${this.toggle('lyricsTranslation','Русский перевод под каждой строкой')}
@@ -50,38 +47,34 @@
             const edit=document.createElement('button');edit.dataset.studio='edit-background';edit.textContent='Настроить фон на экране';this.menu.querySelector('.cbp-upload').before(edit);
             this.menu.addEventListener('click',e=>{const action=e.target.closest('[data-studio]')?.dataset.studio;
                 if(action==='edit-background')this.openBackgroundEditor();
-                if(e.target.closest('[data-action="delete"]'))setTimeout(()=>{for(const [path,id] of Object.entries(this.sceneMap))if(!this.presets().some(p=>p.id===id))delete this.sceneMap[path];storage.put('cbp_scene_map',JSON.stringify(this.sceneMap));this.lastSceneKey=null;this.applyRouteScene().catch(e=>this.report(e));},0);
-                if(action==='assign')this.assignScene();if(action==='unassign')this.assignScene(true);
                 if(action==='reset-interface'){for(const k of Object.keys(STUDIO_DEFAULTS).filter(k=>!k.startsWith('lyrics')))this.settings[k]=STUDIO_DEFAULTS[k];this.save();this.syncUI();this.render();}
             });
             this.syncUI();
         },
+        togglePanelLyrics() {
+            const open=this.settings.lyricsSource==='off';this.settings.lyricsSource=open?'spotify':'off';
+            if(!open){this.lyricsPanel.hidden=true;document.body.classList.remove('cbp-panel-lyrics');this.cancelPanelTranslation();this.refreshPanelBackdrop();}
+            this.save();this.syncUI();this.render();
+        },
         async init() {
-            this.sceneMap=storage.json('cbp_scene_map',{});if(!this.sceneMap||typeof this.sceneMap!=='object'||Array.isArray(this.sceneMap))this.sceneMap={};
             this.studioStyle=document.createElement('style');document.head.append(this.studioStyle);
             this.lyricsPanel=document.createElement('aside');this.lyricsPanel.id='cbp-lyrics';this.lyricsPanel.hidden=true;
             this.lyricsPanel.innerHTML='<header><strong>Текст песни</strong><button data-translation aria-label="Русский перевод" aria-pressed="false" title="Русский перевод">RU</button><button data-retry aria-label="Обновить текст">↻</button><button data-close aria-label="Закрыть текст песни">✕</button></header><p role="status"></p><p class="cbp-translation-status" role="status" hidden></p><div class="cbp-lines" tabindex="0" aria-label="Строки песни"></div>';
             this.lyricsPanel.querySelector('[data-translation]').onclick=()=>{this.settings.lyricsTranslation=!this.settings.lyricsTranslation;this.save();this.syncUI();this.render();};
             this.lyricsPanel.querySelector('[data-retry]').onclick=()=>this.loadPanelLyrics(true);
-            this.lyricsPanel.querySelector('[data-close]').onclick=()=>{this.settings.lyricsSource='off';this.lyricsPanel.hidden=true;document.body.classList.remove('cbp-panel-lyrics');this.cancelPanelTranslation();this.refreshPanelBackdrop();this.save();this.syncUI();this.render();};document.body.append(this.lyricsPanel);
+            this.lyricsPanel.querySelector('[data-close]').onclick=()=>{if(this.settings.lyricsSource!=='off')this.togglePanelLyrics();};document.body.append(this.lyricsPanel);
             this.lyricsPanel.addEventListener('pointerdown',event=>event.stopPropagation());
             await originalInit.call(this);
             this.initPanelBackdrop();
-            const route=()=>this.applyRouteScene().catch(e=>this.report(e));
-            const history=Spicetify.Platform?.History;
-            if(typeof history?.listen==='function')this.unlistenRoute=history.listen(route);
-            else this.routeTimer=setInterval(()=>{if(!document.hidden&&this.routePath()!==this.lastRoute)route();},1000);
-            window.addEventListener('popstate',route);
             Spicetify.Player.addEventListener('songchange',()=>this.loadPanelLyrics());
             Spicetify.Player.addEventListener('onplaypause',()=>{this.updateLyricsClock();this.syncPanelBackdropPlayback();});
             Spicetify.Player.addEventListener('onprogress',()=>{if(!document.hidden&&this.settings.lyricsSource!=='off')this.syncPanelLyrics();});
             document.addEventListener('visibilitychange',()=>{this.updateLyricsClock();this.syncPanelBackdropPlayback();this.updatePanelTranslation();});
             this.updateLyricsClock();
-            await route();
         },
         async render() {
             await originalRender.call(this);if(!this.studioStyle)return;
-            this.renderStudio();this.updateRouteStatus();
+            this.renderStudio();
             if(this.lyricsPanel){this.loadPanelLyrics();this.updateLyricsClock();this.refreshPanelBackdrop();}
         },
         renderStudio() {
@@ -111,26 +104,6 @@
             document.body.classList.toggle('cbp-panel-lyrics',s.lyricsSource!=='off');
             this.lyricsPanel.hidden=s.lyricsSource==='off';
             this.updatePanelContrast?.();
-        },
-        routePath() {return Spicetify.Platform?.History?.location?.pathname||location.pathname;},
-        playlistPath() {const p=this.routePath();if(p==='/collection/tracks')return p;return /^\/playlist\/[a-zA-Z0-9]+\/?$/.test(p)?p.replace(/\/$/,''):null;},
-        updateRouteStatus(){const el=this.menu?.querySelector('#cbp-route-status');if(!el)return;const path=this.playlistPath();const p=this.presets().find(p=>p.id===this.sceneMap?.[path]);el.textContent=path?`Этот плейлист: ${p?.name||'оформление не назначено'}`:'Открой страницу плейлиста для привязки оформления.';},
-        assignScene(remove=false) {
-            const path=this.playlistPath();if(!path){this.notify('Сначала открой плейлист',true);return;}
-            if(remove)delete this.sceneMap[path];else this.sceneMap[path]=this.menu.querySelector('#cbp-presets').value;
-            storage.put('cbp_scene_map',JSON.stringify(this.sceneMap));this.lastSceneKey=null;
-            this.applyRouteScene().catch(e=>this.report(e));
-        },
-        async applyRouteScene() {
-            const token=this.sceneToken=(this.sceneToken||0)+1;this.lastRoute=this.routePath();
-            const id=this.sceneMap[this.playlistPath()],p=this.presets().find(p=>p.id===id),key=p?`${this.lastRoute}:${id}`:'';
-            this.updateRouteStatus();if(key===this.lastSceneKey)return;
-            let image;
-            if(p&&(p.imageSaved||this.presetImages[id]))image=await images.run('readonly',undefined,`cbp_preset_${id}`);
-            if(token!==this.sceneToken)return;
-            if(p){if(!this.sceneBase)this.sceneBase={settings:{...this.settings},image:this.image,activePreset:this.activePreset};this.settings=normalize(p.settings);this.image=image??this.sceneBase.image;this.activePreset=id;}
-            else if(this.sceneBase){Object.assign(this,this.sceneBase);this.sceneBase=null;}
-            this.lastSceneKey=key;this.decoded=null;this.sample=null;this.analysisKey='';this.syncUI();this.fillPresets();await this.render();
         },
         openBackgroundEditor() {
             if(!this.image){this.notify('Сначала выбери фон',true);return;}

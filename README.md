@@ -3,14 +3,14 @@
 Свой Spotify: фоны, стеклянные панели, пресеты и штатные тексты песен.
 Your Spotify: custom backgrounds, glass panels, presets and native lyrics.
 
-[Русский](#русский) · [English](#english) · **1.2.1**
+[Русский](#русский) · [English](#english) · **1.3.0**
 
 ## Русский
 
 ### Возможности
 
 - Свой фон: картинки, GIF и видео MP4/WebM без звука до 30 МБ.
-- Масштаб, положение, размытие и затемнение фона; плавная смена картинок.
+- Масштаб, положение, размытие и затемнение фона.
 - Отдельные настройки стеклянных панелей медиатеки, центра и плеера.
 - Свой или автоматически подобранный цвет текста.
 - Полноразмерная боковая панель текстов Spotify: подсветка текущей строки, плавная прокрутка и перемотка нажатием.
@@ -18,7 +18,7 @@ Your Spotify: custom backgrounds, glass panels, presets and native lyrics.
 - Фон панели текста: Canvas → доступное видео текущего трека → обложка. Видео заполняет панель без искажения пропорций и градиента, обложка под ним скрыта. Цвет текста и ровная контрастная подложка подстраиваются под фон самой панели.
 - Настройки обложек, размеров текста, строк и элементов плеера.
 - Скрытие подкастов, рекомендаций, магазина и штатной правой панели.
-- Пресеты со своим фоном, привязка к плейлистам, экспорт и импорт с предпросмотром.
+- Пресеты со своим фоном и полным набором настроек, экспорт и импорт с предпросмотром.
 
 Это самостоятельное расширение для Spicetify. Другие расширения и отдельные сервисы текстов не нужны. Оно использует штатный источник текстов Spotify, без чтения кэшей и запуска чужих загрузчиков. При наличии таймингов текст синхронизируется по строкам; послоговая и побуквенная синхронизация не заявляется. Если Spotify не предоставляет текст, панель сообщает об этом.
 
@@ -35,7 +35,7 @@ spicetify config extensions custom-bg.js
 spicetify apply
 ```
 
-**Alt+B** — настройки, **Alt+P** — следующее оформление. Тексты включаются в разделе «Текст песни в правой панели → Spotify».
+**Alt+B** — настройки, **Alt+V** — открыть или закрыть текст песни, **Alt+P** — следующее оформление (без отдельной кнопки). Все разделы настроек при открытии свёрнуты; изменения сохраняются автоматически. Своё оформление сохраняет весь набор настроек и фон. Встроенные стили сохраняют настройки интерфейса, плеера и текста.
 
 ### Перевод песен
 
@@ -58,7 +58,7 @@ spicetify apply
 ### Features
 
 - Custom images, GIFs and muted looping MP4/WebM videos up to 30 MB.
-- Background framing, zoom, blur, dimming and image crossfades.
+- Background framing, zoom, blur and dimming.
 - Independent glass settings for the library, main area and player.
 - Custom or automatically selected text colors.
 - Full-height native Spotify lyric sidebar with line highlighting, smooth following and click-to-seek.
@@ -66,7 +66,7 @@ spicetify apply
 - Sidebar backgrounds: Canvas → accessible current-track video → static cover. Videos fill the panel with centered cropping, preserving proportions without gradients or an underlying cover. Text color and a uniform contrast layer adapt to the sidebar media itself.
 - Cover, typography, track row and player sizing controls.
 - Hide podcasts, recommendations, store links and Spotify's native sidebar.
-- Per-playlist presets with their own backgrounds, portable export and import preview.
+- Presets with their own backgrounds and complete settings, portable export and import preview.
 
 A self-contained Spicetify extension: no companion extensions or separate lyric services. Lyrics come directly from Spotify's native source, without reading another extension's cache or triggering its loader. Timing is line-based when available; syllable and character timing are not provided. Unavailable lyrics are reported clearly.
 
@@ -74,7 +74,7 @@ A self-contained Spicetify extension: no companion extensions or separate lyric 
 
 Install desktop Spotify and [Spicetify](https://spicetify.app/docs/getting-started/). Download [custom-bg.js](https://raw.githubusercontent.com/stepashilochvostov467/spicetify-custom-background-native/main/custom-bg.js), copy it to Spicetify's Extensions directory, and run the commands above.
 
-**Alt+B** opens settings; **Alt+P** switches presets. Enable lyrics in the sidebar lyric settings by selecting Spotify.
+**Alt+B** opens settings; **Alt+V** toggles lyrics; **Alt+P** switches presets without a dedicated button. Settings sections open collapsed and changes save automatically. Custom presets capture all settings and the background. Built-in styles preserve interface, player and lyric preferences.
 
 ### Russian translation
 

@@ -12,7 +12,7 @@
         playerBlur: 16, playerDim: 0.6,
         zoom: 100, x: 50, y: 50,
         readable: false, accent: false, custom: false, color: "#ffffff",
-        transitions: true, colorMode: "standard"
+        colorMode: "standard"
     });
     const LIMITS = {
         blur: [0, 50], dim: [0, 1], cards: [0, 1],
@@ -31,7 +31,7 @@
         for (const [key, [lo, hi]] of Object.entries(LIMITS)) {
             if (typeof value[key] === "number" && Number.isFinite(value[key])) s[key] = clamp(value[key], lo, hi);
         }
-        for (const key of ["readable", "accent", "custom", "transitions"]) if (typeof value[key] === "boolean") s[key] = value[key];
+        for (const key of ["readable", "accent", "custom"]) if (typeof value[key] === "boolean") s[key] = value[key];
         for(const [key, fallback] of Object.entries(DEFAULT_EXTRA)) {
             if(typeof fallback==='boolean' && typeof value[key]==='boolean')s[key]=value[key];
         }
@@ -494,12 +494,13 @@ html body #main [data-cbp-clipped] {
             this.menu = document.createElement("section"); this.menu.id = "cbp-settings-menu";
             this.menu.hidden = true; this.menu.setAttribute("role", "dialog"); this.menu.setAttribute("aria-modal", "true"); this.menu.setAttribute("aria-labelledby", "cbp-heading");
             this.menu.innerHTML = `
-                <header><div><small>CUSTOM BACKGROUND NATIVE · 1.2.1</small><h2 id="cbp-heading">Твоё оформление</h2></div><button data-action="close" aria-label="Закрыть настройки">✕</button></header>
-                <div class="cbp-toolbar"><select id="cbp-presets" aria-label="Сохранённые оформления"></select><button data-action="apply">Применить</button><button data-action="cycle" title="Следующее оформление · Alt+P">↻</button></div>
+                <header><div><small>CUSTOM BACKGROUND NATIVE · 1.3.0</small><h2 id="cbp-heading">Твоё оформление</h2></div><button data-action="close" aria-label="Закрыть настройки">✕</button></header>
+                <details><summary>Сохранённые оформления</summary>
+                <div class="cbp-toolbar"><select id="cbp-presets" aria-label="Сохранённые оформления"></select><button data-action="apply">Применить</button></div>
                 <div class="cbp-preset-save"><input id="cbp-preset-name" maxlength="40" placeholder="Название своего оформления" aria-label="Название оформления"><button data-action="save">Сохранить</button><button data-action="delete" aria-label="Удалить выбранное оформление">Удалить</button></div>
                 <div class="cbp-row cbp-sharing"><button data-action="preset-image">Фон для выбранного</button><button data-action="export">Экспорт</button><button data-action="import">Импорт</button><input id="cbp-import" type="file" accept=".json,application/json" hidden></div>
-                <p class="cbp-hint">Новое оформление сохраняет фон и настройки. «Фон для выбранного» назначает текущую картинку выбранному стилю. Экспорт включает картинку.</p>
-                <details open><summary>Фон и положение</summary>
+                <p class="cbp-hint">Новое оформление сохраняет фон и настройки. «Фон для выбранного» назначает текущую картинку выбранному стилю. Экспорт включает картинку.</p></details>
+                <details><summary>Фон и положение</summary>
                     <label class="cbp-upload">Выбрать картинку, GIF или видео<input id="cbp-image-upload" type="file" accept="image/*,video/mp4,video/webm"></label>
                     <p class="cbp-hint">До 30 МБ. Файл хранится локально. Видео воспроизводится без звука.</p>
                     ${this.slider("Размытие фона", "blur", 0, 50, 1, "px")}
@@ -509,19 +510,16 @@ html body #main [data-cbp-clipped] {
                     ${this.slider("Положение по вертикали", "y", 0, 100, 1, "%")}
                     <div class="cbp-row"><button data-action="center">По центру</button><button class="cbp-danger" data-action="remove-image">Удалить картинку</button></div>
                 </details>
-                <details><summary>Смена фона</summary>
-                    ${this.toggle("transitions", "Плавная смена фона")}
-                </details>
-                <details open><summary>Стеклянные панели</summary><p class="cbp-hint">Затемнение 0% — прозрачная панель. Размытие смягчает фон под ней.</p>
+                <details><summary>Стеклянные панели</summary><p class="cbp-hint">Затемнение 0% — прозрачная панель. Размытие смягчает фон под ней.</p>
                     ${[ ["Медиатека", "library"], ["Центральная часть", "center"], ["Плеер", "player"] ].map(([name,key]) => `<h3>${name}</h3>${this.slider("Размытие", key+"Blur", 0, 40, 1, "px")}${this.slider("Затемнение", key+"Dim", 0, 100, 1, "%")}`).join("")}
                     ${this.slider("Непрозрачность карточек", "cards", 0, 100, 1, "%")}
                 </details>
-                <details open><summary>Читаемость и цвет</summary>
+                <details><summary>Читаемость и цвет</summary>
                     <label class="cbp-row">Цвет текста<select data-setting="colorMode"><option value="standard">Стандартный</option><option value="custom">Свой цвет</option><option value="auto">Автоматический</option></select></label>
                     <p class="cbp-hint" id="cbp-auto-info"></p>
                     <div class="cbp-row"><span>Выбранный цвет</span><input id="cbp-color" type="color" aria-label="Цвет текста"></div>
                 </details>
-                <footer><span>Alt+B — настройки · <br>Alt+P — следующее оформление</span></footer>`;
+                <footer><span>Alt+B — настройки · Alt+V — текст песни</span></footer>`;
             this.backdrop = document.createElement("div"); this.backdrop.id = "cbp-menu-backdrop"; this.backdrop.hidden = true;
             document.body.append(this.backdrop, this.menu);
             this.fillPresets(); this.syncUI();
@@ -556,19 +554,18 @@ html body #main [data-cbp-clipped] {
                 catch (error) { this.report(error); return; }
             }
             if (token !== this.imageToken) return;
-            this.settings = normalize({ ...preset.settings,  }); this.activePreset = id;
+            this.settings = normalize({ ...this.settings, ...preset.settings }); this.activePreset = id;
             this.save(); this.syncUI(); this.fillPresets(id); this.render();
             this.notify(`Оформление: ${preset.name}`);
         },
         cyclePreset() { const all = this.presets(); const index = all.findIndex(p => p.id === this.activePreset); this.applyPreset(all[(index + 1) % all.length].id); },
         showMenu(show = this.menu.hidden) {
-            if (show) this.previousFocus = document.activeElement;
+            if (show) { this.previousFocus = document.activeElement; for(const section of this.menu.querySelectorAll("details"))section.open=false; this.menu.scrollTop=0; }
             this.menu.hidden = !show; this.backdrop.hidden = !show;
             if (show) this.menu.querySelector('[data-action="close"]').focus(); else this.previousFocus?.focus?.();
         },
         registerButtons() {
             this.settingsButton = new Spicetify.Topbar.Button("Оформление · Alt+B", "edit", () => this.showMenu(), false, true);
-            this.presetButton = new Spicetify.Topbar.Button("Следующее оформление · Alt+P", "repeat", () => this.cyclePreset(), false, true);
         },
         syncStickyClipping() {
             const root = document.querySelector('.R1kU6b2KxZc8FWfbYf3m,.Root__main-view');
@@ -616,7 +613,6 @@ html body #main [data-cbp-clipped] {
                 const selected = this.menu.querySelector("#cbp-presets").value;
                 if (action === "close") this.showMenu(false);
                 if (action === "apply") this.applyPreset(selected).catch(error => this.report(error));
-                if (action === "cycle") this.cyclePreset();
                 if (action === "center") { Object.assign(this.settings, { x: 50, y: 50, zoom: 100 }); this.activePreset = ""; this.save(); this.syncUI(); this.render(); }
                 if (action === "save") this.savePreset().catch(error => this.report(error));
                 if (action === "preset-image") this.rememberPresetImage(selected).catch(error => this.report(error));
@@ -625,13 +621,14 @@ html body #main [data-cbp-clipped] {
                 if (action === "delete") {
                     if (BUILTINS.some(p => p.id === selected)) return;
                     this.customPresets = this.customPresets.filter(p => p.id !== selected);
-                    storage.put("cbp_v2_presets", JSON.stringify(this.customPresets)); this.fillPresets();
+                    storage.put("cbp_v2_presets", JSON.stringify(this.customPresets)); if(this.activePreset===selected){this.activePreset="";this.save();} this.fillPresets();
                 }
                 if (action === "remove-image") { const token = ++this.imageToken; this.queueImage("", token).catch(error => this.report(error)); }
             });
             this.backdrop.addEventListener("click", () => this.showMenu(false));
             this.menu.querySelector("#cbp-import").addEventListener("change", async e => { try { const file = e.target.files[0]; if (file) { if (file.size > 45 * 1024 * 1024) throw Error("Файл оформления слишком большой (максимум 45 МБ)"); await this.previewImport(JSON.parse(await file.text())); } } catch (error) { this.report(error); } finally { e.target.value = ""; } });
-            this.menu.querySelector("#cbp-image-upload").addEventListener("change", async e => {
+            this.menu.querySelector("#cbp-image-upload").addEventListener("change", e => {
+                this.mediaUpload=(async()=>{
                 const token = ++this.imageToken; const file = e.target.files[0]; if (!file) return;
                 try {
                     if (!/^(image\/|video\/(mp4|webm)$)/.test(file.type)) throw Error("Выбери картинку, GIF, MP4 или WebM");
@@ -641,6 +638,7 @@ html body #main [data-cbp-clipped] {
                     if (token === this.imageToken) await this.queueImage(data, token);
                 } catch (error) { this.report(error); }
                 finally { e.target.value = ""; }
+                })();
             });
             document.addEventListener("keydown", e => {
                 if(this.importPreview || this.backgroundEditor)return;
@@ -654,12 +652,13 @@ html body #main [data-cbp-clipped] {
                     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
                 }
                 if (e.repeat || e.ctrlKey || e.metaKey) return;
-                const shortcut = ({ KeyB: "settings", KeyP: "preset" })[e.code]
-                    || ({ b: "settings", "и": "settings", p: "preset", "з": "preset" })[(e.key || "").toLowerCase()];
+                const shortcut = ({ KeyB: "settings", KeyP: "preset", KeyV: "lyrics" })[e.code]
+                    || ({ b: "settings", "и": "settings", p: "preset", "з": "preset", v: "lyrics", "м": "lyrics" })[(e.key || "").toLowerCase()];
                 if (e.altKey && shortcut) {
                     e.preventDefault(); e.stopImmediatePropagation();
                     if (shortcut === "settings") this.showMenu();
                     if (shortcut === "preset") this.cyclePreset();
+                    if (shortcut === "lyrics") this.togglePanelLyrics();
                 }
             }, true);
             let resize;
@@ -687,18 +686,22 @@ html body #main [data-cbp-clipped] {
             if (!name) { this.notify("Введи название оформления", true); input.focus(); return; }
             if (this.customPresets.length >= 30) { this.notify("Можно сохранить до 30 оформлений", true); return; }
             const id = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            await this.mediaUpload;
+            await this.writeQueue;
             const settings = normalize(this.settings), image = this.image;
             await images.run("readwrite", image, `cbp_preset_${id}`);
             if (this.customPresets.length >= 30) throw Error("Можно сохранить до 30 оформлений");
             this.customPresets.push({ id, name, settings, imageSaved: true });
             storage.put("cbp_v2_presets", JSON.stringify(this.customPresets)); this.activePreset = id;
-            this.fillPresets(id); input.value = ""; this.notify("Оформление сохранено");
+            this.save(); this.fillPresets(id); input.value = ""; this.notify("Оформление сохранено");
         },
     };
 
             Object.assign(APP, {
         async rememberPresetImage(id) {
             if (!this.presets().some(p => p.id === id)) return;
+            await this.mediaUpload;
+            await this.writeQueue;
             await images.run('readwrite', this.image, `cbp_preset_${id}`);
             this.presetImages[id] = true;
             storage.put('cbp_v2_preset_images', JSON.stringify(this.presetImages));
@@ -759,9 +762,8 @@ html body #main [data-cbp-clipped] {
                     media.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none';
                     if(video){media.muted=true;media.loop=true;media.playsInline=true;}
                     media.src=this.image;this.bg.append(media);this.media=media;
-                    if(s.transitions&&!this.reduced.matches)media.animate([{opacity:0},{opacity:1}],{duration:700});
-                    const remove=()=>{old?.pause?.();old?.remove();};
-                    clearTimeout(this.mediaCleanup);this.mediaCleanup=setTimeout(()=>{remove();for(const el of [...this.bg.children])if(el!==this.media){el.pause?.();el.remove();}},750);
+                    old?.pause?.();old?.remove();
+                    for(const el of [...this.bg.children])if(el!==media){el.pause?.();el.remove();}
                     media.onerror=()=>this.notify('Фон не удалось воспроизвести. Выбери другой файл.',true);
                 } else {for(const el of [...this.bg.children]){el.pause?.();el.remove();}this.media=null;}
             }
@@ -798,7 +800,7 @@ html body #main [data-cbp-clipped] {
         buildUI() {
             originalBuildUI.call(this);
             const section=document.createElement('div');section.id='cbp-studio';
-            section.innerHTML=`<details open><summary>Конструктор интерфейса</summary>
+            section.innerHTML=`<details><summary>Конструктор интерфейса</summary>
                 ${this.toggle('hidePodcasts','Скрыть подкасты на главной')}${this.toggle('hideRecommendations','Скрыть рекомендации на главной')}
                 ${this.toggle('hideSidebar','Скрыть правую панель')}${this.toggle('hideStore','Скрыть магазин и Premium')}
                 <button data-studio="reset-interface">Вернуть стандартный интерфейс</button></details>
@@ -808,9 +810,6 @@ html body #main [data-cbp-clipped] {
                 <label class="cbp-row">Шрифт<select data-setting="font"><option value="default">Spotify</option><option value="system">Системный</option></select></label>
                 <label class="cbp-row">Текущий трек<input type="color" data-setting="trackColor"></label><label class="cbp-row">Кнопки плеера<input type="color" data-setting="buttonColor"></label>
                 <details><summary>Дополнительно</summary>${this.slider('Обложка в плеере','playerCover',40,88,1,'px')}${this.slider('Толщина прогресса','progressHeight',2,10,1,'px')}</details></details>
-                <details open><summary>Оформление плейлиста</summary><p id="cbp-route-status" class="cbp-hint"></p>
-                <button data-studio="assign">Назначить выбранный пресет этому плейлисту</button><button data-studio="unassign">Убрать привязку</button>
-                <p class="cbp-hint">Открой плейлист и выбери сохранённое оформление сверху. При уходе с плейлиста вернётся обычное оформление.</p></details>
                 <details><summary>Текст песни в правой панели</summary>
                 <label class="cbp-row">Источник<select data-setting="lyricsSource"><option value="off">Выключен</option><option value="spotify">Spotify</option></select></label>
                 ${this.toggle('lyricsTranslation','Русский перевод под каждой строкой')}
@@ -822,38 +821,34 @@ html body #main [data-cbp-clipped] {
             const edit=document.createElement('button');edit.dataset.studio='edit-background';edit.textContent='Настроить фон на экране';this.menu.querySelector('.cbp-upload').before(edit);
             this.menu.addEventListener('click',e=>{const action=e.target.closest('[data-studio]')?.dataset.studio;
                 if(action==='edit-background')this.openBackgroundEditor();
-                if(e.target.closest('[data-action="delete"]'))setTimeout(()=>{for(const [path,id] of Object.entries(this.sceneMap))if(!this.presets().some(p=>p.id===id))delete this.sceneMap[path];storage.put('cbp_scene_map',JSON.stringify(this.sceneMap));this.lastSceneKey=null;this.applyRouteScene().catch(e=>this.report(e));},0);
-                if(action==='assign')this.assignScene();if(action==='unassign')this.assignScene(true);
                 if(action==='reset-interface'){for(const k of Object.keys(STUDIO_DEFAULTS).filter(k=>!k.startsWith('lyrics')))this.settings[k]=STUDIO_DEFAULTS[k];this.save();this.syncUI();this.render();}
             });
             this.syncUI();
         },
+        togglePanelLyrics() {
+            const open=this.settings.lyricsSource==='off';this.settings.lyricsSource=open?'spotify':'off';
+            if(!open){this.lyricsPanel.hidden=true;document.body.classList.remove('cbp-panel-lyrics');this.cancelPanelTranslation();this.refreshPanelBackdrop();}
+            this.save();this.syncUI();this.render();
+        },
         async init() {
-            this.sceneMap=storage.json('cbp_scene_map',{});if(!this.sceneMap||typeof this.sceneMap!=='object'||Array.isArray(this.sceneMap))this.sceneMap={};
             this.studioStyle=document.createElement('style');document.head.append(this.studioStyle);
             this.lyricsPanel=document.createElement('aside');this.lyricsPanel.id='cbp-lyrics';this.lyricsPanel.hidden=true;
             this.lyricsPanel.innerHTML='<header><strong>Текст песни</strong><button data-translation aria-label="Русский перевод" aria-pressed="false" title="Русский перевод">RU</button><button data-retry aria-label="Обновить текст">↻</button><button data-close aria-label="Закрыть текст песни">✕</button></header><p role="status"></p><p class="cbp-translation-status" role="status" hidden></p><div class="cbp-lines" tabindex="0" aria-label="Строки песни"></div>';
             this.lyricsPanel.querySelector('[data-translation]').onclick=()=>{this.settings.lyricsTranslation=!this.settings.lyricsTranslation;this.save();this.syncUI();this.render();};
             this.lyricsPanel.querySelector('[data-retry]').onclick=()=>this.loadPanelLyrics(true);
-            this.lyricsPanel.querySelector('[data-close]').onclick=()=>{this.settings.lyricsSource='off';this.lyricsPanel.hidden=true;document.body.classList.remove('cbp-panel-lyrics');this.cancelPanelTranslation();this.refreshPanelBackdrop();this.save();this.syncUI();this.render();};document.body.append(this.lyricsPanel);
+            this.lyricsPanel.querySelector('[data-close]').onclick=()=>{if(this.settings.lyricsSource!=='off')this.togglePanelLyrics();};document.body.append(this.lyricsPanel);
             this.lyricsPanel.addEventListener('pointerdown',event=>event.stopPropagation());
             await originalInit.call(this);
             this.initPanelBackdrop();
-            const route=()=>this.applyRouteScene().catch(e=>this.report(e));
-            const history=Spicetify.Platform?.History;
-            if(typeof history?.listen==='function')this.unlistenRoute=history.listen(route);
-            else this.routeTimer=setInterval(()=>{if(!document.hidden&&this.routePath()!==this.lastRoute)route();},1000);
-            window.addEventListener('popstate',route);
             Spicetify.Player.addEventListener('songchange',()=>this.loadPanelLyrics());
             Spicetify.Player.addEventListener('onplaypause',()=>{this.updateLyricsClock();this.syncPanelBackdropPlayback();});
             Spicetify.Player.addEventListener('onprogress',()=>{if(!document.hidden&&this.settings.lyricsSource!=='off')this.syncPanelLyrics();});
             document.addEventListener('visibilitychange',()=>{this.updateLyricsClock();this.syncPanelBackdropPlayback();this.updatePanelTranslation();});
             this.updateLyricsClock();
-            await route();
         },
         async render() {
             await originalRender.call(this);if(!this.studioStyle)return;
-            this.renderStudio();this.updateRouteStatus();
+            this.renderStudio();
             if(this.lyricsPanel){this.loadPanelLyrics();this.updateLyricsClock();this.refreshPanelBackdrop();}
         },
         renderStudio() {
@@ -883,26 +878,6 @@ html body #main [data-cbp-clipped] {
             document.body.classList.toggle('cbp-panel-lyrics',s.lyricsSource!=='off');
             this.lyricsPanel.hidden=s.lyricsSource==='off';
             this.updatePanelContrast?.();
-        },
-        routePath() {return Spicetify.Platform?.History?.location?.pathname||location.pathname;},
-        playlistPath() {const p=this.routePath();if(p==='/collection/tracks')return p;return /^\/playlist\/[a-zA-Z0-9]+\/?$/.test(p)?p.replace(/\/$/,''):null;},
-        updateRouteStatus(){const el=this.menu?.querySelector('#cbp-route-status');if(!el)return;const path=this.playlistPath();const p=this.presets().find(p=>p.id===this.sceneMap?.[path]);el.textContent=path?`Этот плейлист: ${p?.name||'оформление не назначено'}`:'Открой страницу плейлиста для привязки оформления.';},
-        assignScene(remove=false) {
-            const path=this.playlistPath();if(!path){this.notify('Сначала открой плейлист',true);return;}
-            if(remove)delete this.sceneMap[path];else this.sceneMap[path]=this.menu.querySelector('#cbp-presets').value;
-            storage.put('cbp_scene_map',JSON.stringify(this.sceneMap));this.lastSceneKey=null;
-            this.applyRouteScene().catch(e=>this.report(e));
-        },
-        async applyRouteScene() {
-            const token=this.sceneToken=(this.sceneToken||0)+1;this.lastRoute=this.routePath();
-            const id=this.sceneMap[this.playlistPath()],p=this.presets().find(p=>p.id===id),key=p?`${this.lastRoute}:${id}`:'';
-            this.updateRouteStatus();if(key===this.lastSceneKey)return;
-            let image;
-            if(p&&(p.imageSaved||this.presetImages[id]))image=await images.run('readonly',undefined,`cbp_preset_${id}`);
-            if(token!==this.sceneToken)return;
-            if(p){if(!this.sceneBase)this.sceneBase={settings:{...this.settings},image:this.image,activePreset:this.activePreset};this.settings=normalize(p.settings);this.image=image??this.sceneBase.image;this.activePreset=id;}
-            else if(this.sceneBase){Object.assign(this,this.sceneBase);this.sceneBase=null;}
-            this.lastSceneKey=key;this.decoded=null;this.sample=null;this.analysisKey='';this.syncUI();this.fillPresets();await this.render();
         },
         openBackgroundEditor() {
             if(!this.image){this.notify('Сначала выбери фон',true);return;}
@@ -1523,6 +1498,6 @@ html body #main [data-cbp-clipped] {
         try { await APP.init(); } catch (error) { APP.report(error); window.__cbpLoaded = false; }
     }
     // A small diagnostic surface for support and deterministic tests.
-    window.CBP = { version: "1.2.1", app: APP, normalize, cropRect, analyzePixels, luminance };
+    window.CBP = { version: "1.3.0", app: APP, normalize, cropRect, analyzePixels, luminance };
     boot();
 })();
