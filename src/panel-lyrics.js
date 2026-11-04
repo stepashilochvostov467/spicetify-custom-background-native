@@ -10,7 +10,8 @@
     Object.assign(APP,{
         panelLines,lyricRequest:0,
         updateLyricsClock() {
-            const active=this.settings?.lyricsSource==='spotify'&&!document.hidden&&playerValue('isPlaying',false);
+            if(this.clockLineSource!==this.panelLyricLines){this.clockLineSource=this.panelLyricLines;this.clockHasTimings=!!this.panelLyricLines?.some(line=>line.start!==null);}
+            const active=this.clockHasTimings&&this.settings?.lyricsSource==='spotify'&&!document.hidden&&playerValue('isPlaying',false);
             if(!active&&this.lyricsTimer){clearInterval(this.lyricsTimer);this.lyricsTimer=null;}
             if(active&&!this.lyricsTimer)this.lyricsTimer=setInterval(()=>this.syncPanelLyrics(),200);
         },
@@ -23,7 +24,7 @@
             const source=this.settings.lyricsSource,uri=Spicetify.Player.data?.item?.uri||'',key=source+':'+uri;
             if(!force&&this.panelLyricKey===key){this.updatePanelTranslation();return;}this.panelLyricKey=key;
             this.cancelPanelTranslation();
-            const token=++this.lyricRequest;this.panelLyricLines=[];this.panelLyricIndex=-1;
+            const token=++this.lyricRequest;this.panelLyricLines=[];this.panelLyricIndex=-1;this.clockLineSource=null;this.panelTimelineSource=null;this.panelTimeline=[];this.panelRowNodes=[];this.panelStateIndex=undefined;this.translationIdleLines=null;
             const status=this.lyricsPanel.querySelector('[role="status"]'),list=this.lyricsPanel.querySelector('.cbp-lines');list.replaceChildren();list.scrollTop=0;this.updateLyricsClock();
             if(source!=='spotify')return;
             if(!/^spotify:track:[a-zA-Z0-9]+$/.test(uri)){status.textContent='Включи песню, чтобы увидеть текст';return;}
@@ -50,18 +51,6 @@
         },
         syncPanelLyrics(progress=playerValue('getProgress')) {
             if(this.settings?.lyricsSource!=='spotify'||!this.panelLyricLines?.length)return;
-            if(this.panelTimelineSource!==this.panelLyricLines){
-                this.panelTimelineSource=this.panelLyricLines;
-                this.panelTimeline=this.panelLyricLines.map((line,index)=>({start:line.start,index})).filter(l=>l.start!==null).sort((a,b)=>a.start-b.start||a.index-b.index);
-                this.panelList=this.lyricsPanel.querySelector('.cbp-lines');
-            }
-            let lo=0,hi=this.panelTimeline.length;
-            while(lo<hi){const mid=(lo+hi)>>>1;if(this.panelTimeline[mid].start<=progress)lo=mid+1;else hi=mid;}
-            const index=lo?this.panelTimeline[lo-1].index:-1,list=this.panelList;
-            if(index!==this.panelLyricIndex){
-                this.panelLyricIndex=index;
-                [...list.children].forEach((el,i)=>{el.setAttribute('aria-current',String(i===index));el.dataset.state=i<index?'past':i===index?'current':'future';});
-                const el=list.children[index];if(el)list.scrollTo({top:el.offsetTop-list.offsetTop-list.clientHeight/2+el.clientHeight/2,behavior:this.reduced.matches?'instant':'smooth'});
-            }
+            this.syncPanelTimeline(progress);
         }
     });
