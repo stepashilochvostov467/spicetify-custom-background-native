@@ -2,7 +2,7 @@
         hidePodcasts:false, hideRecommendations:false, hideSidebar:false, hideStore:false,
         coverRadius:8, coverScale:100, rowHeight:56, fontSize:14, font:'default',
         trackColor:'#b2c9ff', buttonColor:'#b2c9ff', playerCover:56, progressHeight:4,
-        lyricsSource:'off', lyricsWidth:360, lyricsFont:24
+        lyricsSource:'off', lyricsWidth:360, lyricsFont:24, lyricsTranslation:false
     };
     Object.assign(DEFAULT_EXTRA, STUDIO_DEFAULTS);
     Object.assign(LIMITS,{coverRadius:[0,40],coverScale:[70,130],rowHeight:[40,88],fontSize:[12,20],playerCover:[40,88],progressHeight:[2,10],lyricsWidth:[260,560],lyricsFont:[16,40]});
@@ -41,6 +41,8 @@
                 <p class="cbp-hint">Открой плейлист и выбери сохранённое оформление сверху. При уходе с плейлиста вернётся обычное оформление.</p></details>
                 <details><summary>Текст песни в правой панели</summary>
                 <label class="cbp-row">Источник<select data-setting="lyricsSource"><option value="off">Выключен</option><option value="spotify">Spotify</option></select></label>
+                ${this.toggle('lyricsTranslation','Русский перевод под каждой строкой')}
+                <p class="cbp-hint">Перевод: MyMemory, без ключа. При включении строки отправляются сервису перевода. Бесплатный лимит — 5000 символов в день; готовые переводы сохраняются на этом компьютере.</p>
                 ${this.slider('Ширина панели','lyricsWidth',260,560,1,'px')}${this.slider('Размер букв','lyricsFont',16,40,1,'px')}
                 <p class="cbp-hint">Текст загружается из Spotify. При наличии таймингов строки следуют за песней; нажатие на строку перематывает. Цвет — из твоего оформления.</p></details>`;
             this.menu.querySelector('footer').before(section);
@@ -57,7 +59,8 @@
             this.sceneMap=storage.json('cbp_scene_map',{});if(!this.sceneMap||typeof this.sceneMap!=='object'||Array.isArray(this.sceneMap))this.sceneMap={};
             this.studioStyle=document.createElement('style');document.head.append(this.studioStyle);
             this.lyricsPanel=document.createElement('aside');this.lyricsPanel.id='cbp-lyrics';this.lyricsPanel.hidden=true;
-            this.lyricsPanel.innerHTML='<header><strong>Текст песни</strong><button data-retry aria-label="Обновить текст">↻</button><button data-close aria-label="Закрыть текст песни">✕</button></header><p role="status"></p><div class="cbp-lines" tabindex="0" aria-label="Строки песни"></div>';
+            this.lyricsPanel.innerHTML='<header><strong>Текст песни</strong><button data-translation aria-label="Русский перевод" aria-pressed="false" title="Русский перевод · MyMemory">RU</button><button data-retry aria-label="Обновить текст">↻</button><button data-close aria-label="Закрыть текст песни">✕</button></header><p role="status"></p><p class="cbp-translation-status" role="status" hidden></p><div class="cbp-lines" tabindex="0" aria-label="Строки песни"></div>';
+            this.lyricsPanel.querySelector('[data-translation]').onclick=()=>{this.settings.lyricsTranslation=!this.settings.lyricsTranslation;this.save();this.syncUI();this.render();};
             this.lyricsPanel.querySelector('[data-retry]').onclick=()=>this.loadPanelLyrics(true);
             this.lyricsPanel.querySelector('[data-close]').onclick=()=>{this.settings.lyricsSource='off';this.save();this.syncUI();this.render();};document.body.append(this.lyricsPanel);
             await originalInit.call(this);
@@ -70,7 +73,7 @@
             Spicetify.Player.addEventListener('songchange',()=>this.loadPanelLyrics());
             Spicetify.Player.addEventListener('onplaypause',()=>{this.updateLyricsClock();this.syncPanelBackdropPlayback();});
             Spicetify.Player.addEventListener('onprogress',()=>{if(!document.hidden&&this.settings.lyricsSource!=='off')this.syncPanelLyrics();});
-            document.addEventListener('visibilitychange',()=>{this.updateLyricsClock();this.syncPanelBackdropPlayback();});
+            document.addEventListener('visibilitychange',()=>{this.updateLyricsClock();this.syncPanelBackdropPlayback();this.updatePanelTranslation();});
             this.updateLyricsClock();
             await route();
         },
@@ -162,6 +165,11 @@
         #cbp-lyrics .cbp-lines{overflow:auto;flex:1;min-height:0;padding-block:32px;scrollbar-width:thin}
         #cbp-lyrics .cbp-line{display:block;width:100%;border:0;background:transparent;text-align:start;color:inherit;font:inherit;line-height:1.5;opacity:.45;padding:12px 4px;white-space:pre-wrap;overflow-wrap:anywhere;transition:opacity .2s}
         #cbp-lyrics .cbp-line[aria-current=true]{opacity:1;font-weight:650;background:#ffffff0d}#cbp-lyrics .cbp-line:hover{opacity:1}
+        #cbp-lyrics .cbp-original{display:block}
+        #cbp-lyrics .cbp-translation{display:block;font-size:.7em;font-weight:450;line-height:1.45;margin-top:5px;opacity:.82;color:inherit}
+        #cbp-lyrics .cbp-translation[hidden]{display:none}
+        #cbp-lyrics [data-translation][aria-pressed=true]{background:#ffffff30;outline:1px solid currentColor}
+        #cbp-lyrics .cbp-translation-status{font-size:12px;margin:0 0 6px}
         #cbp-import-preview{position:fixed;inset:0;z-index:100001;background:#000a;display:grid;place-items:center;font:14px system-ui;color:#f5f7ff}
         #cbp-import-preview article{width:min(600px,90vw);max-height:90vh;overflow:auto;background:#14171f;border:1px solid #ffffff30;border-radius:18px;padding:22px}
         #cbp-import-preview .cbp-import-art{height:200px;width:100%;object-fit:cover;border-radius:12px}#cbp-import-preview label{display:block;margin:14px 0}#cbp-import-preview button{margin:8px 8px 0 0}

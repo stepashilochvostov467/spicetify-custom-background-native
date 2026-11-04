@@ -21,7 +21,8 @@
         async loadPanelLyrics(force=false) {
             if(!this.lyricsPanel)return;
             const source=this.settings.lyricsSource,uri=Spicetify.Player.data?.item?.uri||'',key=source+':'+uri;
-            if(!force&&this.panelLyricKey===key)return;this.panelLyricKey=key;
+            if(!force&&this.panelLyricKey===key){this.updatePanelTranslation();return;}this.panelLyricKey=key;
+            this.cancelPanelTranslation();
             const token=++this.lyricRequest;this.panelLyricLines=[];this.panelLyricIndex=-1;
             const status=this.lyricsPanel.querySelector('[role="status"]'),list=this.lyricsPanel.querySelector('.cbp-lines');list.replaceChildren();list.scrollTop=0;this.updateLyricsClock();
             if(source!=='spotify')return;
@@ -32,15 +33,19 @@
                 const data=await this.spotifyPanelData(uri);
                 if(!current())return;
                 this.panelLyricLines=panelLines(data);
+                this.panelLyricLanguage=/^[a-z]{2,3}(?:-[a-z]{2})?$/i.test(data?.lyrics?.language||'')?data.lyrics.language.toLowerCase():'autodetect';
                 status.textContent=!this.panelLyricLines.length?'Для этой песни текст не найден':this.panelLyricLines.some(line=>line.start!==null)?'Spotify · синхронизация по строкам':'Spotify · текст без синхронизации';
                 const fragment=document.createDocumentFragment();
                 for(const line of this.panelLyricLines){
-                    const el=document.createElement(line.start===null?'p':'button');el.className='cbp-line';el.dir='auto';el.textContent=line.text;
+                    const el=document.createElement(line.start===null?'p':'button');el.className='cbp-line';el.dir='auto';
+                    const original=document.createElement('span');original.className='cbp-original';original.textContent=line.text;
+                    const translated=document.createElement('span');translated.className='cbp-translation';translated.lang='ru';translated.dir='ltr';translated.hidden=true;el.append(original,translated);
                     if(line.start!==null)el.onclick=()=>Spicetify.Player.seek(line.start);
                     fragment.append(el);
                 }
                 list.append(fragment);
                 this.syncPanelLyrics();this.updateLyricsClock();
+                this.updatePanelTranslation();
             }catch(error){if(current())status.textContent='Текст недоступен. '+(error.message||'Попробуй другой трек.');}
         },
         syncPanelLyrics(progress=playerValue('getProgress')) {

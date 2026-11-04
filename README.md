@@ -3,7 +3,7 @@
 Свой Spotify: фоны, стеклянные панели, пресеты и штатные тексты песен.
 Your Spotify: custom backgrounds, glass panels, presets and native lyrics.
 
-[Русский](#русский) · [English](#english) · **1.0.0**
+[Русский](#русский) · [English](#english) · **1.1.0**
 
 ## Русский
 
@@ -14,6 +14,7 @@ Your Spotify: custom backgrounds, glass panels, presets and native lyrics.
 - Отдельные настройки стеклянных панелей медиатеки, центра и плеера.
 - Свой или автоматически подобранный цвет текста.
 - Полноразмерная боковая панель текстов Spotify: подсветка текущей строки, плавная прокрутка и перемотка нажатием.
+- Русский перевод под оригиналом: общая подсветка и прокрутка, выбранный цвет текста и локальный кэш переводов.
 - Фон панели текста: Canvas → доступное видео текущего трека → обложка. Видео заполняет панель без искажения пропорций и градиента, обложка под ним скрыта.
 - Настройки обложек, размеров текста, строк и элементов плеера.
 - Скрытие подкастов, рекомендаций, магазина и штатной правой панели.
@@ -36,6 +37,12 @@ spicetify apply
 
 **Alt+B** — настройки, **Alt+P** — следующее оформление. Тексты включаются в разделе «Текст песни в правой панели → Spotify».
 
+### Перевод песен
+
+Нажми **RU** в заголовке панели текста или включи «Русский перевод под каждой строкой» в настройках. При включении строки отправляются в [MyMemory](https://mymemory.translated.net/doc/spec.php) для машинного перевода; Spotify-токены, данные аккаунта и история прослушивания сервису не передаются. Дополнительные расширения и API-ключи не нужны.
+
+Перевод показывается под оригиналом, использует его тайминг и цвет оформления. Нажатие на перевод перематывает к той же строке. Повторяющиеся строки переводятся один раз; результаты хранятся локально до 30 дней. В бесплатном анонимном режиме у сервиса [лимит 5000 символов в день](https://mymemory.translated.net/doc/usagelimits.php). При ошибке или исчерпании лимита оригинал и уже готовые переводы остаются доступны. Для повторной попытки нажми ↻. Качество и доступность машинного перевода зависят от сервиса.
+
 Эта версия заменяет файл `custom-bg.js` предыдущего варианта. Выбирай один вариант расширения; запуск двух копий одновременно не поддерживается. Настройки и формат пресетов совместимы, неподдерживаемый источник текста из старого пресета отключается.
 
 ### Доступность и производительность
@@ -53,6 +60,7 @@ spicetify apply
 - Independent glass settings for the library, main area and player.
 - Custom or automatically selected text colors.
 - Full-height native Spotify lyric sidebar with line highlighting, smooth following and click-to-seek.
+- Russian translation below each original line, sharing its highlight, timing and selected color, with a local translation cache.
 - Sidebar backgrounds: Canvas → accessible current-track video → static cover. Videos fill the panel with centered cropping, preserving proportions without gradients or an underlying cover.
 - Cover, typography, track row and player sizing controls.
 - Hide podcasts, recommendations, store links and Spotify's native sidebar.
@@ -65,6 +73,12 @@ A self-contained Spicetify extension: no companion extensions or separate lyric 
 Install desktop Spotify and [Spicetify](https://spicetify.app/docs/getting-started/). Download [custom-bg.js](https://raw.githubusercontent.com/stepashilochvostov467/spicetify-custom-background-native/main/custom-bg.js), copy it to Spicetify's Extensions directory, and run the commands above.
 
 **Alt+B** opens settings; **Alt+P** switches presets. Enable lyrics in the sidebar lyric settings by selecting Spotify.
+
+### Russian translation
+
+Press **RU** in the lyric panel header or enable Russian translation in settings. When enabled, lyric lines are sent to [MyMemory](https://mymemory.translated.net/doc/spec.php) for machine translation. Spotify tokens, account information and listening history are not sent. No companion extension or API key is required.
+
+Translations appear below their originals and share the same highlight, timing, text color and click-to-seek action. Repeated lines are translated once; results are cached locally for up to 30 days. The service's anonymous tier is [limited to 5000 characters per day](https://mymemory.translated.net/doc/usagelimits.php). Errors or quota exhaustion preserve the originals and completed translations. Press ↻ to retry. Translation quality and availability depend on the service.
 
 This replaces the previous variant's `custom-bg.js`. Use one variant at a time. Appearance settings and preset files remain compatible; an unsupported imported lyric source is disabled.
 

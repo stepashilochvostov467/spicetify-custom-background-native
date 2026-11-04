@@ -493,7 +493,7 @@ html body #main [data-cbp-clipped] {
             this.menu = document.createElement("section"); this.menu.id = "cbp-settings-menu";
             this.menu.hidden = true; this.menu.setAttribute("role", "dialog"); this.menu.setAttribute("aria-modal", "true"); this.menu.setAttribute("aria-labelledby", "cbp-heading");
             this.menu.innerHTML = `
-                <header><div><small>CUSTOM BACKGROUND NATIVE · 1.0.0</small><h2 id="cbp-heading">Твоё оформление</h2></div><button data-action="close" aria-label="Закрыть настройки">✕</button></header>
+                <header><div><small>CUSTOM BACKGROUND NATIVE · 1.1.0</small><h2 id="cbp-heading">Твоё оформление</h2></div><button data-action="close" aria-label="Закрыть настройки">✕</button></header>
                 <div class="cbp-toolbar"><select id="cbp-presets" aria-label="Сохранённые оформления"></select><button data-action="apply">Применить</button><button data-action="cycle" title="Следующее оформление · Alt+P">↻</button></div>
                 <div class="cbp-preset-save"><input id="cbp-preset-name" maxlength="40" placeholder="Название своего оформления" aria-label="Название оформления"><button data-action="save">Сохранить</button><button data-action="delete" aria-label="Удалить выбранное оформление">Удалить</button></div>
                 <div class="cbp-row cbp-sharing"><button data-action="preset-image">Фон для выбранного</button><button data-action="export">Экспорт</button><button data-action="import">Импорт</button><input id="cbp-import" type="file" accept=".json,application/json" hidden></div>
@@ -773,7 +773,7 @@ html body #main [data-cbp-clipped] {
         hidePodcasts:false, hideRecommendations:false, hideSidebar:false, hideStore:false,
         coverRadius:8, coverScale:100, rowHeight:56, fontSize:14, font:'default',
         trackColor:'#b2c9ff', buttonColor:'#b2c9ff', playerCover:56, progressHeight:4,
-        lyricsSource:'off', lyricsWidth:360, lyricsFont:24
+        lyricsSource:'off', lyricsWidth:360, lyricsFont:24, lyricsTranslation:false
     };
     Object.assign(DEFAULT_EXTRA, STUDIO_DEFAULTS);
     Object.assign(LIMITS,{coverRadius:[0,40],coverScale:[70,130],rowHeight:[40,88],fontSize:[12,20],playerCover:[40,88],progressHeight:[2,10],lyricsWidth:[260,560],lyricsFont:[16,40]});
@@ -812,6 +812,8 @@ html body #main [data-cbp-clipped] {
                 <p class="cbp-hint">Открой плейлист и выбери сохранённое оформление сверху. При уходе с плейлиста вернётся обычное оформление.</p></details>
                 <details><summary>Текст песни в правой панели</summary>
                 <label class="cbp-row">Источник<select data-setting="lyricsSource"><option value="off">Выключен</option><option value="spotify">Spotify</option></select></label>
+                ${this.toggle('lyricsTranslation','Русский перевод под каждой строкой')}
+                <p class="cbp-hint">Перевод: MyMemory, без ключа. При включении строки отправляются сервису перевода. Бесплатный лимит — 5000 символов в день; готовые переводы сохраняются на этом компьютере.</p>
                 ${this.slider('Ширина панели','lyricsWidth',260,560,1,'px')}${this.slider('Размер букв','lyricsFont',16,40,1,'px')}
                 <p class="cbp-hint">Текст загружается из Spotify. При наличии таймингов строки следуют за песней; нажатие на строку перематывает. Цвет — из твоего оформления.</p></details>`;
             this.menu.querySelector('footer').before(section);
@@ -828,7 +830,8 @@ html body #main [data-cbp-clipped] {
             this.sceneMap=storage.json('cbp_scene_map',{});if(!this.sceneMap||typeof this.sceneMap!=='object'||Array.isArray(this.sceneMap))this.sceneMap={};
             this.studioStyle=document.createElement('style');document.head.append(this.studioStyle);
             this.lyricsPanel=document.createElement('aside');this.lyricsPanel.id='cbp-lyrics';this.lyricsPanel.hidden=true;
-            this.lyricsPanel.innerHTML='<header><strong>Текст песни</strong><button data-retry aria-label="Обновить текст">↻</button><button data-close aria-label="Закрыть текст песни">✕</button></header><p role="status"></p><div class="cbp-lines" tabindex="0" aria-label="Строки песни"></div>';
+            this.lyricsPanel.innerHTML='<header><strong>Текст песни</strong><button data-translation aria-label="Русский перевод" aria-pressed="false" title="Русский перевод · MyMemory">RU</button><button data-retry aria-label="Обновить текст">↻</button><button data-close aria-label="Закрыть текст песни">✕</button></header><p role="status"></p><p class="cbp-translation-status" role="status" hidden></p><div class="cbp-lines" tabindex="0" aria-label="Строки песни"></div>';
+            this.lyricsPanel.querySelector('[data-translation]').onclick=()=>{this.settings.lyricsTranslation=!this.settings.lyricsTranslation;this.save();this.syncUI();this.render();};
             this.lyricsPanel.querySelector('[data-retry]').onclick=()=>this.loadPanelLyrics(true);
             this.lyricsPanel.querySelector('[data-close]').onclick=()=>{this.settings.lyricsSource='off';this.save();this.syncUI();this.render();};document.body.append(this.lyricsPanel);
             await originalInit.call(this);
@@ -841,7 +844,7 @@ html body #main [data-cbp-clipped] {
             Spicetify.Player.addEventListener('songchange',()=>this.loadPanelLyrics());
             Spicetify.Player.addEventListener('onplaypause',()=>{this.updateLyricsClock();this.syncPanelBackdropPlayback();});
             Spicetify.Player.addEventListener('onprogress',()=>{if(!document.hidden&&this.settings.lyricsSource!=='off')this.syncPanelLyrics();});
-            document.addEventListener('visibilitychange',()=>{this.updateLyricsClock();this.syncPanelBackdropPlayback();});
+            document.addEventListener('visibilitychange',()=>{this.updateLyricsClock();this.syncPanelBackdropPlayback();this.updatePanelTranslation();});
             this.updateLyricsClock();
             await route();
         },
@@ -933,6 +936,11 @@ html body #main [data-cbp-clipped] {
         #cbp-lyrics .cbp-lines{overflow:auto;flex:1;min-height:0;padding-block:32px;scrollbar-width:thin}
         #cbp-lyrics .cbp-line{display:block;width:100%;border:0;background:transparent;text-align:start;color:inherit;font:inherit;line-height:1.5;opacity:.45;padding:12px 4px;white-space:pre-wrap;overflow-wrap:anywhere;transition:opacity .2s}
         #cbp-lyrics .cbp-line[aria-current=true]{opacity:1;font-weight:650;background:#ffffff0d}#cbp-lyrics .cbp-line:hover{opacity:1}
+        #cbp-lyrics .cbp-original{display:block}
+        #cbp-lyrics .cbp-translation{display:block;font-size:.7em;font-weight:450;line-height:1.45;margin-top:5px;opacity:.82;color:inherit}
+        #cbp-lyrics .cbp-translation[hidden]{display:none}
+        #cbp-lyrics [data-translation][aria-pressed=true]{background:#ffffff30;outline:1px solid currentColor}
+        #cbp-lyrics .cbp-translation-status{font-size:12px;margin:0 0 6px}
         #cbp-import-preview{position:fixed;inset:0;z-index:100001;background:#000a;display:grid;place-items:center;font:14px system-ui;color:#f5f7ff}
         #cbp-import-preview article{width:min(600px,90vw);max-height:90vh;overflow:auto;background:#14171f;border:1px solid #ffffff30;border-radius:18px;padding:22px}
         #cbp-import-preview .cbp-import-art{height:200px;width:100%;object-fit:cover;border-radius:12px}#cbp-import-preview label{display:block;margin:14px 0}#cbp-import-preview button{margin:8px 8px 0 0}
@@ -962,7 +970,8 @@ html body #main [data-cbp-clipped] {
         async loadPanelLyrics(force=false) {
             if(!this.lyricsPanel)return;
             const source=this.settings.lyricsSource,uri=Spicetify.Player.data?.item?.uri||'',key=source+':'+uri;
-            if(!force&&this.panelLyricKey===key)return;this.panelLyricKey=key;
+            if(!force&&this.panelLyricKey===key){this.updatePanelTranslation();return;}this.panelLyricKey=key;
+            this.cancelPanelTranslation();
             const token=++this.lyricRequest;this.panelLyricLines=[];this.panelLyricIndex=-1;
             const status=this.lyricsPanel.querySelector('[role="status"]'),list=this.lyricsPanel.querySelector('.cbp-lines');list.replaceChildren();list.scrollTop=0;this.updateLyricsClock();
             if(source!=='spotify')return;
@@ -973,15 +982,19 @@ html body #main [data-cbp-clipped] {
                 const data=await this.spotifyPanelData(uri);
                 if(!current())return;
                 this.panelLyricLines=panelLines(data);
+                this.panelLyricLanguage=/^[a-z]{2,3}(?:-[a-z]{2})?$/i.test(data?.lyrics?.language||'')?data.lyrics.language.toLowerCase():'autodetect';
                 status.textContent=!this.panelLyricLines.length?'Для этой песни текст не найден':this.panelLyricLines.some(line=>line.start!==null)?'Spotify · синхронизация по строкам':'Spotify · текст без синхронизации';
                 const fragment=document.createDocumentFragment();
                 for(const line of this.panelLyricLines){
-                    const el=document.createElement(line.start===null?'p':'button');el.className='cbp-line';el.dir='auto';el.textContent=line.text;
+                    const el=document.createElement(line.start===null?'p':'button');el.className='cbp-line';el.dir='auto';
+                    const original=document.createElement('span');original.className='cbp-original';original.textContent=line.text;
+                    const translated=document.createElement('span');translated.className='cbp-translation';translated.lang='ru';translated.dir='ltr';translated.hidden=true;el.append(original,translated);
                     if(line.start!==null)el.onclick=()=>Spicetify.Player.seek(line.start);
                     fragment.append(el);
                 }
                 list.append(fragment);
                 this.syncPanelLyrics();this.updateLyricsClock();
+                this.updatePanelTranslation();
             }catch(error){if(current())status.textContent='Текст недоступен. '+(error.message||'Попробуй другой трек.');}
         },
         syncPanelLyrics(progress=playerValue('getProgress')) {
@@ -999,6 +1012,110 @@ html body #main [data-cbp-clipped] {
                 [...list.children].forEach((el,i)=>{el.setAttribute('aria-current',String(i===index));el.dataset.state=i<index?'past':i===index?'current':'future';});
                 const el=list.children[index];if(el)list.scrollTo({top:el.offsetTop-list.offsetTop-list.clientHeight/2+el.clientHeight/2,behavior:this.reduced.matches?'instant':'smooth'});
             }
+        }
+    });
+
+    const translationCacheKey='cbp_ru_translation_cache_v1';
+    const translationTTL=30*24*60*60*1000;
+    const translationPlain=value=>String(value).replace(/&(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-f]+);/gi,entity=>{
+        const named={'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&apos;':"'"};
+        if(named[entity.toLowerCase()])return named[entity.toLowerCase()];
+        const code=entity[2].toLowerCase()==='x'?parseInt(entity.slice(3,-1),16):Number(entity.slice(2,-1));
+        return code>0&&code<=0x10ffff&&!(code>=0xd800&&code<=0xdfff)?String.fromCodePoint(code):entity;
+    });
+    Object.assign(APP,{
+        translationChunks(text) {
+            const chunks=[],encoder=new TextEncoder();let chunk='';
+            for(const char of text){
+                while(encoder.encode(chunk+char).length>480){
+                    const space=chunk.lastIndexOf(' ');
+                    if(space>0){chunks.push(chunk.slice(0,space));chunk=chunk.slice(space+1);}else{chunks.push(chunk);chunk='';}
+                }
+                chunk+=char;
+            }
+            if(chunk.trim())chunks.push(chunk.trim());return chunks;
+        },
+        cancelPanelTranslation() {
+            this.panelTranslationAbort?.abort();this.panelTranslationAbort=null;this.panelTranslationKey=null;
+            const status=this.lyricsPanel?.querySelector('.cbp-translation-status');if(status){status.textContent='';status.hidden=true;}
+        },
+        async getTranslationCache() {
+            if(this.translationCache)return this.translationCache;
+            if(!this.translationCachePromise)this.translationCachePromise=(async()=>{
+                let saved;try{saved=await images.run('readonly',undefined,translationCacheKey);}catch{}
+                const cache=new Map(),now=Date.now();
+                if(Array.isArray(saved))for(const entry of saved.slice(-500)){
+                    if(!Array.isArray(entry)||typeof entry[0]!=='string'||entry[0].length>11000)continue;
+                    const value=entry[1];if(value&&typeof value.text==='string'&&value.text.length<=15000&&Number.isFinite(value.at)&&now-value.at<translationTTL)cache.set(entry[0],value);
+                }
+                this.translationCache=cache;return cache;
+            })();
+            return this.translationCachePromise;
+        },
+        rememberTranslation(key,text) {
+            const cache=this.translationCache;if(!cache)return;
+            cache.delete(key);cache.set(key,{text,at:Date.now()});
+            while(cache.size>500)cache.delete(cache.keys().next().value);
+            clearTimeout(this.translationSaveTimer);
+            this.translationSaveTimer=setTimeout(()=>{this.translationSaveTimer=null;images.run('readwrite',[...cache],translationCacheKey).catch(()=>{});},500);
+        },
+        async requestRussianTranslation(text,language,signal) {
+            const parts=[];
+            for(const chunk of this.translationChunks(text)){
+                const query=new URLSearchParams({q:chunk,langpair:language+'|ru',mt:'1'});
+                const response=await fetch('https://api.mymemory.translated.net/get?'+query,{signal:AbortSignal.any([signal,AbortSignal.timeout(10000)]),credentials:'omit',referrerPolicy:'no-referrer'});
+                if(response.status===429){const error=Error('Дневной лимит переводчика исчерпан');error.quota=true;throw error;}
+                if(!response.ok)throw Error('Сервис перевода недоступен');
+                const data=await response.json();
+                if(data.quotaFinished||Number(data.responseStatus)===429){const error=Error('Дневной лимит переводчика исчерпан');error.quota=true;throw error;}
+                if(Number(data.responseStatus)!==200||typeof data.responseData?.translatedText!=='string'||!data.responseData.translatedText.trim()||data.responseData.translatedText.length>15000)throw Error('Сервис не вернул перевод');
+                parts.push(translationPlain(data.responseData.translatedText));
+            }
+            return parts.join(' ');
+        },
+        async updatePanelTranslation() {
+            const enabled=this.settings?.lyricsTranslation===true&&this.settings.lyricsSource==='spotify';
+            const button=this.lyricsPanel?.querySelector('[data-translation]');if(button)button.setAttribute('aria-pressed',String(this.settings?.lyricsTranslation===true));
+            const nodes=this.lyricsPanel?.querySelectorAll('.cbp-translation');
+            if(!enabled){this.cancelPanelTranslation();nodes?.forEach(el=>el.hidden=true);return;}
+            if(document.hidden){this.cancelPanelTranslation();return;}
+            const lines=this.panelLyricLines;if(!lines?.length)return;
+            const language=this.panelLyricLanguage||'autodetect',key=this.lyricRequest+':'+language;
+            if(this.panelTranslationKey===key)return;
+            this.cancelPanelTranslation();this.panelTranslationKey=key;
+            const controller=new AbortController();this.panelTranslationAbort=controller;const signal=controller.signal;
+            const current=()=>!signal.aborted&&this.panelLyricLines===lines&&this.settings.lyricsTranslation===true&&this.settings.lyricsSource==='spotify';
+            const status=this.lyricsPanel.querySelector('.cbp-translation-status');status.hidden=false;
+            if(/^ru(?:-|$)/.test(language)){status.textContent='Песня уже на русском';return;}
+            status.textContent='Перевожу на русский · MyMemory…';
+            let completed=0,failed=0,quota=false;
+            const apply=(text,translation)=>{if(!current())return;lines.forEach((line,i)=>{if(line.text!==text)return;const el=nodes[i];if(el){el.textContent=translation;el.hidden=!translation||translation===text;}});};
+            try{
+                const cache=await this.getTranslationCache();if(!current())return;
+                const unique=[...new Set(lines.map(line=>line.text).filter(text=>/\p{L}/u.test(text)))];
+                const pending=[];
+                for(const text of unique){const cached=cache.get(language+'\n'+text);if(cached&&Date.now()-cached.at<translationTTL){apply(text,cached.text);completed++;}else pending.push(text);}
+                // Translate near the playing line first, while keeping every result attached
+                // to its original row. Chorus repetitions share one request and cache entry.
+                const at=Math.max(0,this.panelLyricIndex),order=new Map(lines.map((line,i)=>[line.text,Math.abs(i-at)]));
+                pending.sort((a,b)=>(order.get(a)||0)-(order.get(b)||0));
+                let consumed=0;const queue=pending.filter(text=>{consumed+=text.length;return consumed<=16000;});
+                failed+=pending.length-queue.length;
+                let next=0,networkFailures=0;
+                await Promise.all(Array.from({length:Math.min(2,queue.length)},async()=>{
+                    while(next<queue.length&&current()&&!quota){
+                        const text=queue[next++];
+                        try{
+                            const translated=await this.requestRussianTranslation(text,language,signal);if(!current())return;
+                            this.rememberTranslation(language+'\n'+text,translated);apply(text,translated);completed++;
+                        }catch(error){if(!current())return;failed++;networkFailures++;if(error.quota||networkFailures>=3){quota=!!error.quota;controller.abort();}}
+                    }
+                }));
+                if(this.panelTranslationAbort!==controller||this.panelLyricLines!==lines||!this.settings.lyricsTranslation||this.settings.lyricsSource!=='spotify')return;
+                status.textContent=quota?'Лимит MyMemory исчерпан. Готовые переводы сохранены.':failed?'Часть строк не переведена. Нажми ↻ для повторной попытки.':completed?'Машинный перевод · MyMemory':'Нет строк для перевода';
+                // Translation changes row heights: re-center the active original/translation pair.
+                this.panelLyricIndex=-1;this.syncPanelLyrics();
+            }catch{if(current())status.textContent='Перевод недоступен. Нажми ↻ для повторной попытки.';}
         }
     });
 
@@ -1209,6 +1326,6 @@ html body #main [data-cbp-clipped] {
         try { await APP.init(); } catch (error) { APP.report(error); window.__cbpLoaded = false; }
     }
     // A small diagnostic surface for support and deterministic tests.
-    window.CBP = { version: "1.0.0", app: APP, normalize, cropRect, analyzePixels, luminance };
+    window.CBP = { version: "1.1.0", app: APP, normalize, cropRect, analyzePixels, luminance };
     boot();
 })();
