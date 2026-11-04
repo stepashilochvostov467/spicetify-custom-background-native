@@ -17,13 +17,24 @@ async () => {
 
     const home=document.createElement('div');home.dataset.testid='home-page';
     home.innerHTML='<section class="Shelf" id="podcasts"><a href="/show/test">Подкаст</a></section><section data-testid="recommendation-section" id="recommendations">Советы</section><section id="music">Музыка</section>';
-    document.getElementById('main').append(home);
+    document.querySelector('.R1kU6b2KxZc8FWfbYf3m').append(home);
+    const filters=document.createElement('div');filters.className='Yt3NCcQ9MNQ6msx88cPe';
+    filters.innerHTML='<div><button>Все</button></div><div><button aria-checked="false">Музыка</button></div><div><button aria-checked="true">Подкасты</button></div><div><button aria-checked="false">Аудиокниги</button></div>';
+    home.before(filters);let resetFilter=0;filters.querySelector('button').onclick=()=>{resetFilter++;filters.querySelector('[aria-checked="true"]')?.setAttribute('aria-checked','false');};
+    const books=document.createElement('section');books.innerHTML='<a href="/audiobook/test">Книга</a>';home.append(books);
     a.settings.hidePodcasts=true;a.settings.hideRecommendations=true;await a.render();
+    ok(getComputedStyle(filters.children[2]).display==='none'&&getComputedStyle(filters.children[3]).display==='none','podcast and audiobook chips including their wrappers disappear');
+    ok(getComputedStyle(filters.children[0]).display!=='none'&&getComputedStyle(filters.children[1]).display!=='none','All and Music chips remain available');
+    ok(resetFilter===1,'selected hidden filter resets to All instead of leaving an empty feed');
+    ok(getComputedStyle(books).display==='none','audiobook shelves disappear with podcasts');
+    filters.insertAdjacentHTML('beforeend','<div><button aria-label="Podcasts">Podcasts</button></div>');
+    a.scheduleHomeScan();await wait(180);ok(getComputedStyle(filters.lastChild).display==='none','late rendered navigation chips are also hidden');
     ok(getComputedStyle(home.querySelector('#podcasts')).display==='none','podcast section hidden');
     ok(getComputedStyle(home.querySelector('#recommendations')).display==='none','recommendations hidden');
     ok(getComputedStyle(home.querySelector('#music')).display!=='none','music content preserved');
     a.settings.hidePodcasts=false;a.settings.hideRecommendations=false;await a.render();
     ok(getComputedStyle(home.querySelector('#podcasts')).display!=='none','hidden content restored');
+    ok(getComputedStyle(filters.children[2]).display!=='none'&&getComputedStyle(filters.children[3]).display!=='none'&&getComputedStyle(books).display!=='none','turning hiding off restores chips and audiobook shelves');
     const side=document.createElement('aside');side.className='s8fIIxwITjOk1aFOxhPv';side.textContent='Native sidebar';document.getElementById('main').append(side);
     a.settings.hideSidebar=true;await a.render();ok(getComputedStyle(side).display==='none','native Spotify sidebar class hidden');
     a.settings.hideSidebar=false;await a.render();ok(getComputedStyle(side).display!=='none','native sidebar restored');

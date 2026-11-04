@@ -10,13 +10,34 @@
     Object.assign(APP, {
         scanHomeShelves() {
             if(!this.settings)return;
+            this.scanHomeFilters();
             if(!this.settings.hidePodcasts&&!this.settings.hideRecommendations){for(const el of document.querySelectorAll('[data-cbp-hide-section]'))el.removeAttribute('data-cbp-hide-section');return;}
             for(const el of document.querySelectorAll('[data-testid="home-page"] :is(section,.Shelf)')) {
                 if(el.querySelector('section,.Shelf'))continue;
                 const title=el.querySelector('h2,h3')?.textContent||'';
-                const podcast=!!el.querySelector('a[href^="/show/"],a[href^="/episode/"]');
+                const podcast=!!el.querySelector('a[href^="/show/"],a[href^="/episode/"],a[href^="/audiobook/"],a[href^="/book/"],a[href^="/chapter/"]');
                 const recommended=/рекоменд|специально для тебя|тебе может понравиться|сделано для тебя|recommended|made for you|suggested for you|you might like/i.test(title);
                 el.toggleAttribute('data-cbp-hide-section',(this.settings.hidePodcasts&&podcast)||(this.settings.hideRecommendations&&recommended));
+            }
+        },
+        scanHomeFilters() {
+            const root=document.querySelector('.Root__main-view,.R1kU6b2KxZc8FWfbYf3m')||document.querySelector('[data-testid="home-page"]');
+            if(!root)return;
+            for(const el of root.querySelectorAll('[data-cbp-hide-chip]'))el.removeAttribute('data-cbp-hide-chip');
+            if(!this.settings.hidePodcasts)return;
+            const label=el=>(el.getAttribute('aria-label')||el.textContent||'').trim().toLocaleLowerCase();
+            const controls=[...root.querySelectorAll('button,[role="tab"],[role="checkbox"],a[href]')];
+            for(const button of controls){
+                if(!/^(?:подкасты(?: и шоу)?|аудиокниги|podcasts(?: & shows)?|audiobooks)$/.test(label(button)))continue;
+                const parent=button.parentElement;
+                const wrapper=parent?.children.length===1&&/^(?:DIV|SPAN)$/.test(parent.tagName)&&parent!==root?parent:button;
+                wrapper.setAttribute('data-cbp-hide-chip','');
+                const selected=['aria-pressed','aria-selected','aria-checked'].some(key=>button.getAttribute(key)==='true');
+                if(!selected){this.hiddenHomeSelection?.delete(button);continue;}
+                this.hiddenHomeSelection||=new WeakSet();if(this.hiddenHomeSelection.has(button))continue;
+                const group=button.closest('[role="tablist"],[role="group"],.Yt3NCcQ9MNQ6msx88cPe')||parent?.parentElement;
+                const all=[...(group||root).querySelectorAll('button,[role="tab"],[role="checkbox"],a[href]')].find(el=>/^(?:все|всё|all)$/.test(label(el)));
+                if(all){this.hiddenHomeSelection.add(button);all.click();}
             }
         },
         scheduleHomeScan() {
@@ -27,7 +48,7 @@
             originalBuildUI.call(this);
             const section=document.createElement('div');section.id='cbp-studio';
             section.innerHTML=`<details><summary>Конструктор интерфейса</summary>
-                ${this.toggle('hidePodcasts','Скрыть подкасты на главной')}${this.toggle('hideRecommendations','Скрыть рекомендации на главной')}
+                ${this.toggle('hidePodcasts','Скрыть подкасты и аудиокниги')}${this.toggle('hideRecommendations','Скрыть рекомендации на главной')}
                 ${this.toggle('hideSidebar','Скрыть правую панель')}${this.toggle('hideStore','Скрыть магазин и Premium')}
                 <button data-studio="reset-interface">Вернуть стандартный интерфейс</button></details>
                 <details><summary>Элементы и плеер</summary>
@@ -82,8 +103,8 @@
             const styleKey=JSON.stringify(Object.keys(STUDIO_DEFAULTS).map(k=>s[k]))+':'+this.effectColor;
             if(styleKey===this.studioKey)return;this.studioKey=styleKey;
             const css=[];
-            this.scanHomeShelves();css.push('#main [data-cbp-hide-section]{display:none!important}');
-            if(s.hidePodcasts)css.push('[data-testid="home-page"] :is(.Shelf,section):has(a[href^="/show/"],a[href^="/episode/"]){display:none!important}');
+            this.scanHomeShelves();css.push('#main :is([data-cbp-hide-section],[data-cbp-hide-chip]){display:none!important}');
+            if(s.hidePodcasts)css.push('[data-testid="home-page"] :is(.Shelf,section):has(a[href^="/show/"],a[href^="/episode/"],a[href^="/audiobook/"],a[href^="/book/"],a[href^="/chapter/"]){display:none!important}');
             if(s.hideRecommendations)css.push('[data-testid="home-page"] :is([data-testid="recommendation-section"],[data-testid="recommended-section"],section[data-uri*="recommendation"],.Shelf:has(a[href^="/genre/recommended"])) {display:none!important}');
             if(s.hideStore)css.push('#main :is(a[href^="/store"],a[href*="spotify.com/premium"],[data-testid="upgrade-button"],[data-testid="premium-upsell-link"],[aria-label="Маркетплейс"],[aria-label="Marketplace"],[title="Marketplace"],[title="Маркетплейс"]){display:none!important}');
             if(s.hideSidebar||s.lyricsSource!=='off')css.push('#main :is(.Root__right-sidebar,.s8fIIxwITjOk1aFOxhPv,[data-testid="right-sidebar"],#Desktop_PanelContainer_Id){display:none!important}#main{--right-sidebar-width:0!important}#main .R1kU6b2KxZc8FWfbYf3m{grid-area:main-view/main-view/main-view/right-sidebar!important}');

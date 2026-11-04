@@ -3,7 +3,11 @@
 Свой Spotify: фоны, стеклянные панели, пресеты и штатные тексты песен.
 Your Spotify: custom backgrounds, glass panels, presets and native lyrics.
 
-[Русский](#русский) · [English](#english) · **1.3.0**
+[Русский](#русский) · [English](#english) · **1.3.1**
+
+Версия **без Spicy Lyrics**. [Основной проект с Spicy Lyrics и подсветкой слогов](https://github.com/stepashilochvostov467/spicetify-custom-background).
+
+**No Spicy Lyrics dependency.** [Full version with Spicy Lyrics syllable sync](https://github.com/stepashilochvostov467/spicetify-custom-background).
 
 ## Русский
 
@@ -17,7 +21,7 @@ Your Spotify: custom backgrounds, glass panels, presets and native lyrics.
 - Русский перевод под оригиналом: общая подсветка и прокрутка, выбранный цвет текста и локальный кэш переводов.
 - Фон панели текста: Canvas → доступное видео текущего трека → обложка. Видео заполняет панель без искажения пропорций и градиента, обложка под ним скрыта. Цвет текста и ровная контрастная подложка подстраиваются под фон самой панели.
 - Настройки обложек, размеров текста, строк и элементов плеера.
-- Скрытие подкастов, рекомендаций, магазина и штатной правой панели.
+- Скрытие подкастов и аудиокниг вместе с кнопками их разделов, рекомендаций, магазина и штатной правой панели.
 - Пресеты со своим фоном и полным набором настроек, экспорт и импорт с предпросмотром.
 
 Это самостоятельное расширение для Spicetify. Другие расширения и отдельные сервисы текстов не нужны. Оно использует штатный источник текстов Spotify, без чтения кэшей и запуска чужих загрузчиков. При наличии таймингов текст синхронизируется по строкам; послоговая и побуквенная синхронизация не заявляется. Если Spotify не предоставляет текст, панель сообщает об этом.
@@ -65,7 +69,7 @@ spicetify apply
 - Russian translation below each original line, sharing its highlight, timing and selected color, with a local translation cache.
 - Sidebar backgrounds: Canvas → accessible current-track video → static cover. Videos fill the panel with centered cropping, preserving proportions without gradients or an underlying cover. Text color and a uniform contrast layer adapt to the sidebar media itself.
 - Cover, typography, track row and player sizing controls.
-- Hide podcasts, recommendations, store links and Spotify's native sidebar.
+- Hide podcasts and audiobooks including their navigation chips, recommendations, store links and Spotify's native sidebar.
 - Presets with their own backgrounds and complete settings, portable export and import preview.
 
 A self-contained Spicetify extension: no companion extensions or separate lyric services. Lyrics come directly from Spotify's native source, without reading another extension's cache or triggering its loader. Timing is line-based when available; syllable and character timing are not provided. Unavailable lyrics are reported clearly.
