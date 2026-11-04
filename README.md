@@ -3,7 +3,7 @@
 Свой Spotify: фоны, стеклянные панели, файлы оформлений и тексты песен.
 Your Spotify: custom backgrounds, glass panels, appearance files and lyrics.
 
-[Русский](#русский) · [English](#english) · **1.4.0**
+[Русский](#русский) · [English](#english) · **1.4.2**
 
 Версия **без Spicy Lyrics**. [Основной проект с Spicy Lyrics и подсветкой слогов](https://github.com/stepashilochvostov467/spicetify-custom-background).
 
@@ -19,7 +19,7 @@ Your Spotify: custom backgrounds, glass panels, appearance files and lyrics.
 - Свой или автоматически подобранный цвет текста, кнопок и иконок. У иконок контрастная тень, у кнопки воспроизведения — светлый или тёмный значок по цвету заливки.
 - Полноразмерная боковая панель текстов Spotify: подсветка текущей строки, плавная прокрутка и перемотка нажатием.
 - Русский перевод под оригиналом: общая подсветка и прокрутка, выбранный цвет текста и локальный кэш переводов.
-- Фон панели текста: Canvas → доступное видео текущего трека → обложка. Видео заполняет панель без искажения пропорций и градиента, обложка под ним скрыта. Цвет текста и ровная контрастная подложка подстраиваются под фон самой панели.
+- Фон панели текста: Canvas → доступное видео текущего трека → обложка. Видео заполняет панель без искажения пропорций и градиента, обложка под ним скрыта. Цвет текста подстраивается под фон самой панели. Затемнение регулируется отдельно в настройках текста; по умолчанию 12%, можно поставить 0%.
 - Настройки обложек, размеров текста, строк и элементов плеера.
 - Скрытие подкастов и аудиокниг вместе с кнопками их разделов, рекомендаций, магазина и штатной правой панели.
 - Alt+P: сохранить текущее оформление в JSON или импортировать файл с предпросмотром. Файл включает фон и все настройки; каталога встроенных и сохранённых стилей нет.
@@ -67,7 +67,7 @@ spicetify apply
 - Custom or automatically selected text, button and icon colors, contrast halos, and a light/dark foreground for the play button.
 - Full-height native Spotify lyric sidebar with line highlighting, smooth following and click-to-seek.
 - Russian translation below each original line, sharing its highlight, timing and selected color, with a local translation cache.
-- Sidebar backgrounds: Canvas → accessible current-track video → static cover. Videos fill the panel with centered cropping, preserving proportions without gradients or an underlying cover. Text color and a uniform contrast layer adapt to the sidebar media itself.
+- Sidebar backgrounds: Canvas → accessible current-track video → static cover. Videos fill the panel with centered cropping, preserving proportions without gradients or an underlying cover. Text color adapts to the sidebar media. Sidebar dimming is independent: 12% by default, adjustable down to 0%.
 - Cover, typography, track row and player sizing controls.
 - Hide podcasts and audiobooks including their navigation chips, recommendations, store links and Spotify's native sidebar.
 - Alt+P: export the current appearance to JSON or import a file with preview. Files contain the background and all settings; there is no built-in or saved preset catalog.
