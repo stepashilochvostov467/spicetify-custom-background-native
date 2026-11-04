@@ -2,7 +2,7 @@
         hidePodcasts:false, hideRecommendations:false, hideSidebar:false, hideStore:false,
         coverRadius:8, coverScale:100, rowHeight:56, fontSize:14, font:'default',
         trackColor:'#b2c9ff', buttonColor:'#b2c9ff', playerCover:56, progressHeight:4,
-        lyricsSource:'off', lyricsWidth:360, lyricsFont:24, lyricsTranslation:false
+        lyricsSource:'off', lyricsWidth:360, lyricsFont:24, lyricsTranslation:false, lyricsTranslationEngine:'local'
     };
     Object.assign(DEFAULT_EXTRA, STUDIO_DEFAULTS);
     Object.assign(LIMITS,{coverRadius:[0,40],coverScale:[70,130],rowHeight:[40,88],fontSize:[12,20],playerCover:[40,88],progressHeight:[2,10],lyricsWidth:[260,560],lyricsFont:[16,40]});
@@ -42,7 +42,8 @@
                 <details><summary>Текст песни в правой панели</summary>
                 <label class="cbp-row">Источник<select data-setting="lyricsSource"><option value="off">Выключен</option><option value="spotify">Spotify</option></select></label>
                 ${this.toggle('lyricsTranslation','Русский перевод под каждой строкой')}
-                <p class="cbp-hint">Перевод: MyMemory, без ключа. При включении строки отправляются сервису перевода. Бесплатный лимит — 5000 символов в день; готовые переводы сохраняются на этом компьютере.</p>
+                <label class="cbp-row">Переводчик<select data-setting="lyricsTranslationEngine"><option value="local">На компьютере · EN → RU · без дневной квоты</option><option value="mymemory">MyMemory · другие языки · онлайн</option></select></label>
+                <p class="cbp-hint">Локальный перевод: английский → русский. При первом запуске скачиваются модель и движок, затем они работают без интернета. Текст песни остаётся на компьютере. Вычисления используют память и процессор. MyMemory отправляет строки сервису перевода; у него лимит 5000 символов в день.</p>
                 ${this.slider('Ширина панели','lyricsWidth',260,560,1,'px')}${this.slider('Размер букв','lyricsFont',16,40,1,'px')}
                 <p class="cbp-hint">Текст загружается из Spotify. При наличии таймингов строки следуют за песней; нажатие на строку перематывает. Цвет — из твоего оформления.</p></details>`;
             this.menu.querySelector('footer').before(section);
@@ -59,10 +60,11 @@
             this.sceneMap=storage.json('cbp_scene_map',{});if(!this.sceneMap||typeof this.sceneMap!=='object'||Array.isArray(this.sceneMap))this.sceneMap={};
             this.studioStyle=document.createElement('style');document.head.append(this.studioStyle);
             this.lyricsPanel=document.createElement('aside');this.lyricsPanel.id='cbp-lyrics';this.lyricsPanel.hidden=true;
-            this.lyricsPanel.innerHTML='<header><strong>Текст песни</strong><button data-translation aria-label="Русский перевод" aria-pressed="false" title="Русский перевод · MyMemory">RU</button><button data-retry aria-label="Обновить текст">↻</button><button data-close aria-label="Закрыть текст песни">✕</button></header><p role="status"></p><p class="cbp-translation-status" role="status" hidden></p><div class="cbp-lines" tabindex="0" aria-label="Строки песни"></div>';
+            this.lyricsPanel.innerHTML='<header><strong>Текст песни</strong><button data-translation aria-label="Русский перевод" aria-pressed="false" title="Русский перевод">RU</button><button data-retry aria-label="Обновить текст">↻</button><button data-close aria-label="Закрыть текст песни">✕</button></header><p role="status"></p><p class="cbp-translation-status" role="status" hidden></p><div class="cbp-lines" tabindex="0" aria-label="Строки песни"></div>';
             this.lyricsPanel.querySelector('[data-translation]').onclick=()=>{this.settings.lyricsTranslation=!this.settings.lyricsTranslation;this.save();this.syncUI();this.render();};
             this.lyricsPanel.querySelector('[data-retry]').onclick=()=>this.loadPanelLyrics(true);
-            this.lyricsPanel.querySelector('[data-close]').onclick=()=>{this.settings.lyricsSource='off';this.save();this.syncUI();this.render();};document.body.append(this.lyricsPanel);
+            this.lyricsPanel.querySelector('[data-close]').onclick=()=>{this.settings.lyricsSource='off';this.lyricsPanel.hidden=true;document.body.classList.remove('cbp-panel-lyrics');this.cancelPanelTranslation();this.refreshPanelBackdrop();this.save();this.syncUI();this.render();};document.body.append(this.lyricsPanel);
+            this.lyricsPanel.addEventListener('pointerdown',event=>event.stopPropagation());
             await originalInit.call(this);
             this.initPanelBackdrop();
             const route=()=>this.applyRouteScene().catch(e=>this.report(e));
@@ -108,6 +110,7 @@
             this.studioStyle.textContent=STUDIO_CSS+css.join('\n');
             document.body.classList.toggle('cbp-panel-lyrics',s.lyricsSource!=='off');
             this.lyricsPanel.hidden=s.lyricsSource==='off';
+            this.updatePanelContrast?.();
         },
         routePath() {return Spicetify.Platform?.History?.location?.pathname||location.pathname;},
         playlistPath() {const p=this.routePath();if(p==='/collection/tracks')return p;return /^\/playlist\/[a-zA-Z0-9]+\/?$/.test(p)?p.replace(/\/$/,''):null;},
@@ -156,17 +159,20 @@
         .cbp-editor-tools{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:min(720px,90vw);background:#14171ff5;color:white;border:1px solid #ffffff30;border-radius:16px;padding:18px;display:flex;gap:12px;flex-wrap:wrap;cursor:default;font:14px system-ui}
         .cbp-editor-tools button,#cbp-lyrics button,#cbp-import-preview button{font:inherit;color:inherit;background:#ffffff15;border:1px solid #ffffff30;border-radius:8px;padding:8px;cursor:pointer}
         .cbp-editor-tools strong{width:100%}.cbp-editor-tools label{display:flex;gap:8px;align-items:center}
-        #cbp-lyrics{position:fixed;right:8px;top:8px;bottom:8px;z-index:5;padding:18px;box-sizing:border-box;display:flex;flex-direction:column;background:#11151c;backdrop-filter:none;border-radius:16px;isolation:isolate;overflow:hidden;color:var(--cbp-lyric-ink,#fff);font-family:system-ui;text-shadow:0 1px 4px #0009;box-shadow:0 0 0 1px #ffffff18}
+        #cbp-lyrics{position:fixed;right:8px;top:8px;bottom:8px;z-index:9000;padding:18px;box-sizing:border-box;display:flex;flex-direction:column;background:#11151c;backdrop-filter:none;border-radius:16px;isolation:isolate;overflow:hidden;color:var(--cbp-panel-ink,var(--cbp-lyric-ink,#fff));font-family:system-ui;text-shadow:0 1px 4px #0009;box-shadow:0 0 0 1px #ffffff18}
         #cbp-lyrics>.cbp-panel-backdrop{position:absolute;inset:0;z-index:0;pointer-events:none;background:#11151c}
         #cbp-lyrics>.cbp-panel-backdrop :is(img,video){position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;max-height:none;object-fit:cover;object-position:center;filter:none;border-radius:0}
+        #cbp-lyrics>.cbp-panel-backdrop::after{content:"";position:absolute;inset:0;background:var(--cbp-panel-scrim,#0009)}
+        #cbp-lyrics,#cbp-lyrics *{-webkit-app-region:no-drag!important;app-region:no-drag!important}
+        #cbp-lyrics header,#cbp-lyrics header button{pointer-events:auto!important;touch-action:manipulation}
         #cbp-lyrics>.cbp-panel-backdrop:is([data-source=canvas],[data-source=clip])>img{display:none}
         #cbp-lyrics>:not(.cbp-panel-backdrop){position:relative;z-index:1}
         #cbp-lyrics[hidden]{display:none}#cbp-lyrics header{display:flex;justify-content:space-between;align-items:center;font-size:15px;gap:8px}#cbp-lyrics p{font-size:13px;line-height:1.5}
         #cbp-lyrics .cbp-lines{overflow:auto;flex:1;min-height:0;padding-block:32px;scrollbar-width:thin}
-        #cbp-lyrics .cbp-line{display:block;width:100%;border:0;background:transparent;text-align:start;color:inherit;font:inherit;line-height:1.5;opacity:.45;padding:12px 4px;white-space:pre-wrap;overflow-wrap:anywhere;transition:opacity .2s}
+        #cbp-lyrics .cbp-line{display:block;width:100%;border:0;background:transparent;text-align:start;color:inherit;font:inherit;line-height:1.5;opacity:.78;padding:12px 4px;white-space:pre-wrap;overflow-wrap:anywhere;transition:opacity .2s}
         #cbp-lyrics .cbp-line[aria-current=true]{opacity:1;font-weight:650;background:#ffffff0d}#cbp-lyrics .cbp-line:hover{opacity:1}
         #cbp-lyrics .cbp-original{display:block}
-        #cbp-lyrics .cbp-translation{display:block;font-size:.7em;font-weight:450;line-height:1.45;margin-top:5px;opacity:.82;color:inherit}
+        #cbp-lyrics .cbp-translation{display:block;font-size:.7em;font-weight:450;line-height:1.45;margin-top:5px;opacity:.94;color:inherit}
         #cbp-lyrics .cbp-translation[hidden]{display:none}
         #cbp-lyrics [data-translation][aria-pressed=true]{background:#ffffff30;outline:1px solid currentColor}
         #cbp-lyrics .cbp-translation-status{font-size:12px;margin:0 0 6px}

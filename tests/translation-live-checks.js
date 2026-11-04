@@ -1,5 +1,5 @@
 async () => {
-    const a=CBP.app;
+    const a=CBP.app;a.settings.lyricsTranslationEngine='mymemory';
     Spicetify.Player.data.item={uri:'spotify:track:TRANSLATELIVE',metadata:{image_url:testImage}};
     Spicetify.CosmosAsync={get:async()=>({lyrics:{language:'en',syncType:'LINE_SYNCED',lines:[{startTimeMs:'0',words:'The small blue bird flies over the quiet city.'}]}})};
     a.settings.lyricsSource='spotify';a.settings.lyricsTranslation=true;await a.render();

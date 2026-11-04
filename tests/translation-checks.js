@@ -1,5 +1,6 @@
 async () => {
     const a=CBP.app,checks=[],ok=(condition,message)=>{if(!condition)throw Error(message);checks.push(message);};
+    a.settings.lyricsTranslationEngine='mymemory';
     const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     const settle=async()=>{for(let i=0;i<100;i++){if(!a.lyricsPanel.querySelector('.cbp-translation-status').textContent.includes('Перевожу'))return;await wait(20);}throw Error('Translation did not finish');};
     let calls=0,requested=[];

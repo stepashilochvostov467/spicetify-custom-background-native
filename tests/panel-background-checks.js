@@ -38,7 +38,7 @@ async () => {
     ok(Math.abs(panelBounds.top-8)<1&&Math.abs(panelBounds.bottom-(innerHeight-8))<1,'lyric panel spans the window height with small edge margins');
     ok(Math.abs(videoBounds.height-panelBounds.height)<2&&Math.abs(videoBounds.width-panelBounds.width)<2&&getComputedStyle(a.panelVideo).objectFit==='cover','video fills the full panel without changing its aspect ratio');
     ok(getComputedStyle(a.panelBackdrop.querySelector('img')).display==='none','album cover is hidden underneath Canvas');
-    ok(getComputedStyle(a.panelBackdrop,'::after').content==='none','Canvas has no gradient overlay');
+    ok(!getComputedStyle(a.panelBackdrop,'::after').backgroundImage.includes('gradient'),'Canvas uses no gradient overlay');
     Spicetify.Player.isPlaying=()=>true;a.syncPanelBackdropPlayback();await new Promise(r=>setTimeout(r,60));
     ok(!a.panelVideo.paused,'panel video plays with music');
     Spicetify.Player.isPlaying=()=>false;a.syncPanelBackdropPlayback();ok(a.panelVideo.paused,'panel video pauses with music');

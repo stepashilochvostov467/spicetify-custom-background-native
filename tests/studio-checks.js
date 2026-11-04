@@ -9,7 +9,7 @@ async () => {
     ok(CBP.normalize({custom:true,color:'#123456'}).colorMode==='custom'&&CBP.normalize({readable:true}).colorMode==='auto','legacy text color modes migrated');
     a.settings=CBP.normalize({...a.settings,colorMode:'custom'});await a.render();a.syncUI();
     ok(!a.menu.querySelector('#cbp-color').disabled&&a.menu.querySelector('[data-setting="colorMode"]').value==='custom','single selector enables custom text color');
-    a.menu.querySelector('[data-setting="colorMode"]').value='standard';a.menu.querySelector('[data-setting="colorMode"]').dispatchEvent(new Event('input',{bubbles:true}));await wait(40);
+    a.menu.querySelector('[data-setting="colorMode"]').value='standard';a.menu.querySelector('[data-setting="colorMode"]').dispatchEvent(new Event('input',{bubbles:true}));for(let i=0;i<50&&!a.menu.querySelector('#cbp-color').disabled;i++)await wait(20);
     ok(!a.settings.readable&&!a.settings.custom&&a.menu.querySelector('#cbp-color').disabled,'standard text mode disables automatic and custom color');
     ok(!a.lyricsTimer,'lyric clock stopped when lyrics are off');
     a.settings.lyricsSource='spotify';Spicetify.Player.isPlaying=()=>true;a.updateLyricsClock();ok(!!a.lyricsTimer,'lyric clock starts with enabled lyrics and playback');

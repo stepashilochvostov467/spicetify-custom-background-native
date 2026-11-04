@@ -38,6 +38,7 @@
         for(const key of ['trackColor','buttonColor'])if(/^#[0-9a-f]{6}$/i.test(value[key]||''))s[key]=value[key];
         if(['default','system'].includes(value.font))s.font=value.font;
         if(['off','spotify'].includes(value.lyricsSource))s.lyricsSource=value.lyricsSource;
+        if(['local','mymemory'].includes(value.lyricsTranslationEngine))s.lyricsTranslationEngine=value.lyricsTranslationEngine;
         if (/^#[0-9a-f]{6}$/i.test(value.color || "")) s.color = value.color;
         const mode=['standard','custom','auto'].includes(value.colorMode)?value.colorMode:(s.readable||s.accent?'auto':s.custom?'custom':'standard');
         s.colorMode=mode;s.readable=mode==='auto';s.custom=mode==='custom';s.accent=false;
@@ -493,7 +494,7 @@ html body #main [data-cbp-clipped] {
             this.menu = document.createElement("section"); this.menu.id = "cbp-settings-menu";
             this.menu.hidden = true; this.menu.setAttribute("role", "dialog"); this.menu.setAttribute("aria-modal", "true"); this.menu.setAttribute("aria-labelledby", "cbp-heading");
             this.menu.innerHTML = `
-                <header><div><small>CUSTOM BACKGROUND NATIVE · 1.1.0</small><h2 id="cbp-heading">Твоё оформление</h2></div><button data-action="close" aria-label="Закрыть настройки">✕</button></header>
+                <header><div><small>CUSTOM BACKGROUND NATIVE · 1.2.1</small><h2 id="cbp-heading">Твоё оформление</h2></div><button data-action="close" aria-label="Закрыть настройки">✕</button></header>
                 <div class="cbp-toolbar"><select id="cbp-presets" aria-label="Сохранённые оформления"></select><button data-action="apply">Применить</button><button data-action="cycle" title="Следующее оформление · Alt+P">↻</button></div>
                 <div class="cbp-preset-save"><input id="cbp-preset-name" maxlength="40" placeholder="Название своего оформления" aria-label="Название оформления"><button data-action="save">Сохранить</button><button data-action="delete" aria-label="Удалить выбранное оформление">Удалить</button></div>
                 <div class="cbp-row cbp-sharing"><button data-action="preset-image">Фон для выбранного</button><button data-action="export">Экспорт</button><button data-action="import">Импорт</button><input id="cbp-import" type="file" accept=".json,application/json" hidden></div>
@@ -773,7 +774,7 @@ html body #main [data-cbp-clipped] {
         hidePodcasts:false, hideRecommendations:false, hideSidebar:false, hideStore:false,
         coverRadius:8, coverScale:100, rowHeight:56, fontSize:14, font:'default',
         trackColor:'#b2c9ff', buttonColor:'#b2c9ff', playerCover:56, progressHeight:4,
-        lyricsSource:'off', lyricsWidth:360, lyricsFont:24, lyricsTranslation:false
+        lyricsSource:'off', lyricsWidth:360, lyricsFont:24, lyricsTranslation:false, lyricsTranslationEngine:'local'
     };
     Object.assign(DEFAULT_EXTRA, STUDIO_DEFAULTS);
     Object.assign(LIMITS,{coverRadius:[0,40],coverScale:[70,130],rowHeight:[40,88],fontSize:[12,20],playerCover:[40,88],progressHeight:[2,10],lyricsWidth:[260,560],lyricsFont:[16,40]});
@@ -813,7 +814,8 @@ html body #main [data-cbp-clipped] {
                 <details><summary>Текст песни в правой панели</summary>
                 <label class="cbp-row">Источник<select data-setting="lyricsSource"><option value="off">Выключен</option><option value="spotify">Spotify</option></select></label>
                 ${this.toggle('lyricsTranslation','Русский перевод под каждой строкой')}
-                <p class="cbp-hint">Перевод: MyMemory, без ключа. При включении строки отправляются сервису перевода. Бесплатный лимит — 5000 символов в день; готовые переводы сохраняются на этом компьютере.</p>
+                <label class="cbp-row">Переводчик<select data-setting="lyricsTranslationEngine"><option value="local">На компьютере · EN → RU · без дневной квоты</option><option value="mymemory">MyMemory · другие языки · онлайн</option></select></label>
+                <p class="cbp-hint">Локальный перевод: английский → русский. При первом запуске скачиваются модель и движок, затем они работают без интернета. Текст песни остаётся на компьютере. Вычисления используют память и процессор. MyMemory отправляет строки сервису перевода; у него лимит 5000 символов в день.</p>
                 ${this.slider('Ширина панели','lyricsWidth',260,560,1,'px')}${this.slider('Размер букв','lyricsFont',16,40,1,'px')}
                 <p class="cbp-hint">Текст загружается из Spotify. При наличии таймингов строки следуют за песней; нажатие на строку перематывает. Цвет — из твоего оформления.</p></details>`;
             this.menu.querySelector('footer').before(section);
@@ -830,10 +832,11 @@ html body #main [data-cbp-clipped] {
             this.sceneMap=storage.json('cbp_scene_map',{});if(!this.sceneMap||typeof this.sceneMap!=='object'||Array.isArray(this.sceneMap))this.sceneMap={};
             this.studioStyle=document.createElement('style');document.head.append(this.studioStyle);
             this.lyricsPanel=document.createElement('aside');this.lyricsPanel.id='cbp-lyrics';this.lyricsPanel.hidden=true;
-            this.lyricsPanel.innerHTML='<header><strong>Текст песни</strong><button data-translation aria-label="Русский перевод" aria-pressed="false" title="Русский перевод · MyMemory">RU</button><button data-retry aria-label="Обновить текст">↻</button><button data-close aria-label="Закрыть текст песни">✕</button></header><p role="status"></p><p class="cbp-translation-status" role="status" hidden></p><div class="cbp-lines" tabindex="0" aria-label="Строки песни"></div>';
+            this.lyricsPanel.innerHTML='<header><strong>Текст песни</strong><button data-translation aria-label="Русский перевод" aria-pressed="false" title="Русский перевод">RU</button><button data-retry aria-label="Обновить текст">↻</button><button data-close aria-label="Закрыть текст песни">✕</button></header><p role="status"></p><p class="cbp-translation-status" role="status" hidden></p><div class="cbp-lines" tabindex="0" aria-label="Строки песни"></div>';
             this.lyricsPanel.querySelector('[data-translation]').onclick=()=>{this.settings.lyricsTranslation=!this.settings.lyricsTranslation;this.save();this.syncUI();this.render();};
             this.lyricsPanel.querySelector('[data-retry]').onclick=()=>this.loadPanelLyrics(true);
-            this.lyricsPanel.querySelector('[data-close]').onclick=()=>{this.settings.lyricsSource='off';this.save();this.syncUI();this.render();};document.body.append(this.lyricsPanel);
+            this.lyricsPanel.querySelector('[data-close]').onclick=()=>{this.settings.lyricsSource='off';this.lyricsPanel.hidden=true;document.body.classList.remove('cbp-panel-lyrics');this.cancelPanelTranslation();this.refreshPanelBackdrop();this.save();this.syncUI();this.render();};document.body.append(this.lyricsPanel);
+            this.lyricsPanel.addEventListener('pointerdown',event=>event.stopPropagation());
             await originalInit.call(this);
             this.initPanelBackdrop();
             const route=()=>this.applyRouteScene().catch(e=>this.report(e));
@@ -879,6 +882,7 @@ html body #main [data-cbp-clipped] {
             this.studioStyle.textContent=STUDIO_CSS+css.join('\n');
             document.body.classList.toggle('cbp-panel-lyrics',s.lyricsSource!=='off');
             this.lyricsPanel.hidden=s.lyricsSource==='off';
+            this.updatePanelContrast?.();
         },
         routePath() {return Spicetify.Platform?.History?.location?.pathname||location.pathname;},
         playlistPath() {const p=this.routePath();if(p==='/collection/tracks')return p;return /^\/playlist\/[a-zA-Z0-9]+\/?$/.test(p)?p.replace(/\/$/,''):null;},
@@ -927,17 +931,20 @@ html body #main [data-cbp-clipped] {
         .cbp-editor-tools{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:min(720px,90vw);background:#14171ff5;color:white;border:1px solid #ffffff30;border-radius:16px;padding:18px;display:flex;gap:12px;flex-wrap:wrap;cursor:default;font:14px system-ui}
         .cbp-editor-tools button,#cbp-lyrics button,#cbp-import-preview button{font:inherit;color:inherit;background:#ffffff15;border:1px solid #ffffff30;border-radius:8px;padding:8px;cursor:pointer}
         .cbp-editor-tools strong{width:100%}.cbp-editor-tools label{display:flex;gap:8px;align-items:center}
-        #cbp-lyrics{position:fixed;right:8px;top:8px;bottom:8px;z-index:5;padding:18px;box-sizing:border-box;display:flex;flex-direction:column;background:#11151c;backdrop-filter:none;border-radius:16px;isolation:isolate;overflow:hidden;color:var(--cbp-lyric-ink,#fff);font-family:system-ui;text-shadow:0 1px 4px #0009;box-shadow:0 0 0 1px #ffffff18}
+        #cbp-lyrics{position:fixed;right:8px;top:8px;bottom:8px;z-index:9000;padding:18px;box-sizing:border-box;display:flex;flex-direction:column;background:#11151c;backdrop-filter:none;border-radius:16px;isolation:isolate;overflow:hidden;color:var(--cbp-panel-ink,var(--cbp-lyric-ink,#fff));font-family:system-ui;text-shadow:0 1px 4px #0009;box-shadow:0 0 0 1px #ffffff18}
         #cbp-lyrics>.cbp-panel-backdrop{position:absolute;inset:0;z-index:0;pointer-events:none;background:#11151c}
         #cbp-lyrics>.cbp-panel-backdrop :is(img,video){position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;max-height:none;object-fit:cover;object-position:center;filter:none;border-radius:0}
+        #cbp-lyrics>.cbp-panel-backdrop::after{content:"";position:absolute;inset:0;background:var(--cbp-panel-scrim,#0009)}
+        #cbp-lyrics,#cbp-lyrics *{-webkit-app-region:no-drag!important;app-region:no-drag!important}
+        #cbp-lyrics header,#cbp-lyrics header button{pointer-events:auto!important;touch-action:manipulation}
         #cbp-lyrics>.cbp-panel-backdrop:is([data-source=canvas],[data-source=clip])>img{display:none}
         #cbp-lyrics>:not(.cbp-panel-backdrop){position:relative;z-index:1}
         #cbp-lyrics[hidden]{display:none}#cbp-lyrics header{display:flex;justify-content:space-between;align-items:center;font-size:15px;gap:8px}#cbp-lyrics p{font-size:13px;line-height:1.5}
         #cbp-lyrics .cbp-lines{overflow:auto;flex:1;min-height:0;padding-block:32px;scrollbar-width:thin}
-        #cbp-lyrics .cbp-line{display:block;width:100%;border:0;background:transparent;text-align:start;color:inherit;font:inherit;line-height:1.5;opacity:.45;padding:12px 4px;white-space:pre-wrap;overflow-wrap:anywhere;transition:opacity .2s}
+        #cbp-lyrics .cbp-line{display:block;width:100%;border:0;background:transparent;text-align:start;color:inherit;font:inherit;line-height:1.5;opacity:.78;padding:12px 4px;white-space:pre-wrap;overflow-wrap:anywhere;transition:opacity .2s}
         #cbp-lyrics .cbp-line[aria-current=true]{opacity:1;font-weight:650;background:#ffffff0d}#cbp-lyrics .cbp-line:hover{opacity:1}
         #cbp-lyrics .cbp-original{display:block}
-        #cbp-lyrics .cbp-translation{display:block;font-size:.7em;font-weight:450;line-height:1.45;margin-top:5px;opacity:.82;color:inherit}
+        #cbp-lyrics .cbp-translation{display:block;font-size:.7em;font-weight:450;line-height:1.45;margin-top:5px;opacity:.94;color:inherit}
         #cbp-lyrics .cbp-translation[hidden]{display:none}
         #cbp-lyrics [data-translation][aria-pressed=true]{background:#ffffff30;outline:1px solid currentColor}
         #cbp-lyrics .cbp-translation-status{font-size:12px;margin:0 0 6px}
@@ -1024,6 +1031,15 @@ html body #main [data-cbp-clipped] {
         return code>0&&code<=0x10ffff&&!(code>=0xd800&&code<=0xdfff)?String.fromCodePoint(code):entity;
     });
     Object.assign(APP,{
+        translationWithTone(source,translated) {
+            // A phrasal verb, not a literal sexual verb. Do not rewrite unrelated profanity.
+            const phrase=source.match(/\bfucking\s+(me|you|him|her|us|them)\s+up\b/i);
+            if(!phrase)return translated;
+            const pronouns={me:'меня',you:'тебя',him:'его',her:'её',us:'нас',them:'их'},pronoun=pronouns[phrase[1].toLowerCase()];
+            const verb='разъёбывает';
+            const wrong='(?:на[её]б[а-яё]*|траха[а-яё]*|[её]б[её]т|расстраива[а-яё]*|доста[а-яё]*)';
+            return translated.replace(new RegExp(pronoun+'\\s+'+wrong,'gi'),pronoun+' '+verb).replace(new RegExp(wrong+'\\s+'+pronoun,'gi'),verb+' '+pronoun);
+        },
         translationChunks(text) {
             const chunks=[],encoder=new TextEncoder();let chunk='';
             for(const char of text){
@@ -1037,6 +1053,7 @@ html body #main [data-cbp-clipped] {
         },
         cancelPanelTranslation() {
             this.panelTranslationAbort?.abort();this.panelTranslationAbort=null;this.panelTranslationKey=null;
+            if(!this.settings?.lyricsTranslation||this.settings.lyricsSource!=='spotify'||this.settings.lyricsTranslationEngine!=='local'||document.hidden)this.scheduleLocalUnload?.();
             const status=this.lyricsPanel?.querySelector('.cbp-translation-status');if(status){status.textContent='';status.hidden=true;}
         },
         async getTranslationCache() {
@@ -1080,42 +1097,192 @@ html body #main [data-cbp-clipped] {
             if(!enabled){this.cancelPanelTranslation();nodes?.forEach(el=>el.hidden=true);return;}
             if(document.hidden){this.cancelPanelTranslation();return;}
             const lines=this.panelLyricLines;if(!lines?.length)return;
-            const language=this.panelLyricLanguage||'autodetect',key=this.lyricRequest+':'+language;
+            const language=this.panelLyricLanguage||'autodetect',engine=this.settings.lyricsTranslationEngine||'local',key=this.lyricRequest+':'+language+':'+engine;
             if(this.panelTranslationKey===key)return;
             this.cancelPanelTranslation();this.panelTranslationKey=key;
             const controller=new AbortController();this.panelTranslationAbort=controller;const signal=controller.signal;
             const current=()=>!signal.aborted&&this.panelLyricLines===lines&&this.settings.lyricsTranslation===true&&this.settings.lyricsSource==='spotify';
             const status=this.lyricsPanel.querySelector('.cbp-translation-status');status.hidden=false;
             if(/^ru(?:-|$)/.test(language)){status.textContent='Песня уже на русском';return;}
-            status.textContent='Перевожу на русский · MyMemory…';
-            let completed=0,failed=0,quota=false;
-            const apply=(text,translation)=>{if(!current())return;lines.forEach((line,i)=>{if(line.text!==text)return;const el=nodes[i];if(el){el.textContent=translation;el.hidden=!translation||translation===text;}});};
+            if(engine==='local'&&!/^en(?:-|$)|^eng$/.test(language)){
+                status.textContent='Локальная модель: только английский → русский. Для другого языка выбери MyMemory в настройках.';return;
+            }
+            status.textContent=engine==='local'?'Готовлю локальный перевод…':'Перевожу на русский · MyMemory…';
+            const cacheKey=text=>(engine==='local'?'local-enru-v2:':'')+language+'\n'+text;
+            let completed=0,failed=0,quota=false,firstError='';
+            const apply=(text,translation)=>{if(!current())return;const result=this.translationWithTone(text,translation);lines.forEach((line,i)=>{if(line.text!==text)return;const el=nodes[i];if(el){el.textContent=result;el.hidden=!result||result===text;}});};
             try{
                 const cache=await this.getTranslationCache();if(!current())return;
                 const unique=[...new Set(lines.map(line=>line.text).filter(text=>/\p{L}/u.test(text)))];
                 const pending=[];
-                for(const text of unique){const cached=cache.get(language+'\n'+text);if(cached&&Date.now()-cached.at<translationTTL){apply(text,cached.text);completed++;}else pending.push(text);}
+                for(const text of unique){const cached=cache.get(cacheKey(text));if(cached&&Date.now()-cached.at<translationTTL){apply(text,cached.text);completed++;}else pending.push(text);}
                 // Translate near the playing line first, while keeping every result attached
                 // to its original row. Chorus repetitions share one request and cache entry.
                 const at=Math.max(0,this.panelLyricIndex),order=new Map(lines.map((line,i)=>[line.text,Math.abs(i-at)]));
                 pending.sort((a,b)=>(order.get(a)||0)-(order.get(b)||0));
-                let consumed=0;const queue=pending.filter(text=>{consumed+=text.length;return consumed<=16000;});
+                let consumed=0;const queue=engine==='local'?pending:pending.filter(text=>{consumed+=text.length;return consumed<=16000;});
                 failed+=pending.length-queue.length;
                 let next=0,networkFailures=0;
-                await Promise.all(Array.from({length:Math.min(2,queue.length)},async()=>{
+                await Promise.all(Array.from({length:Math.min(engine==='local'?1:2,queue.length)},async()=>{
                     while(next<queue.length&&current()&&!quota){
                         const text=queue[next++];
                         try{
-                            const translated=await this.requestRussianTranslation(text,language,signal);if(!current())return;
-                            this.rememberTranslation(language+'\n'+text,translated);apply(text,translated);completed++;
-                        }catch(error){if(!current())return;failed++;networkFailures++;if(error.quota||networkFailures>=3){quota=!!error.quota;controller.abort();}}
+                            const translated=engine==='local'?await this.requestLocalRussianTranslation(text,signal):await this.requestRussianTranslation(text,language,signal);if(!current())return;
+                            this.rememberTranslation(cacheKey(text),translated);apply(text,translated);completed++;
+                        }catch(error){if(!current())return;failed++;networkFailures++;firstError||=error.message;if(error.quota||engine==='local'||networkFailures>=3){quota=!!error.quota;controller.abort();}}
                     }
                 }));
                 if(this.panelTranslationAbort!==controller||this.panelLyricLines!==lines||!this.settings.lyricsTranslation||this.settings.lyricsSource!=='spotify')return;
-                status.textContent=quota?'Лимит MyMemory исчерпан. Готовые переводы сохранены.':failed?'Часть строк не переведена. Нажми ↻ для повторной попытки.':completed?'Машинный перевод · MyMemory':'Нет строк для перевода';
+                status.textContent=quota?'Лимит MyMemory исчерпан. Готовые переводы сохранены.':failed?(engine==='local'?firstError+' Нажми ↻ для повторной попытки.':'Часть строк не переведена. Нажми ↻ для повторной попытки.'):completed?(engine==='local'?'Локальный перевод · EN → RU · без дневной квоты':'Машинный перевод · MyMemory'):'Нет строк для перевода';
                 // Translation changes row heights: re-center the active original/translation pair.
                 this.panelLyricIndex=-1;this.syncPanelLyrics();
+                if(engine==='local'){
+                    if(this.localCacheFailed)status.textContent+=' · Кэш модели недоступен: при следующем запуске понадобится интернет.';
+                    this.scheduleLocalUnload();
+                }
             }catch{if(current())status.textContent='Перевод недоступен. Нажми ↻ для повторной попытки.';}
+        }
+    });
+
+    // Runs in its own Web Worker: model inference never blocks Spotify's UI.
+    function localTranslatorWorker() {
+        const runtimeBase='https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/';
+        const assets=[
+            ['transformers.min.js','aa5002b70e789798da263f5f99c62bd3e8fcd0c119258a493c40c180648365fa'],
+            ['ort-wasm-simd-threaded.jsep.mjs','08fb86ec433c78bfb032c5d84a68b8e8e5a8d81268fa39e24314179a5767a5b9'],
+            ['ort-wasm-simd-threaded.jsep.wasm','c46655e8a94afc45338d4cb2b840475f88e5012d524509916e505079c00bfa39']
+        ];
+        const model='Xenova/opus-mt-en-ru',revision='e050376e960175e8ddc5cff85025dc8436cddd68';
+        const modelBase=`https://huggingface.co/${model}/resolve/${revision}/`;
+        const modelFiles=['tokenizer.json','tokenizer_config.json','config.json','generation_config.json','onnx/encoder_model_quantized.onnx','onnx/decoder_model_merged_quantized.onnx'];
+        const nativeFetch=self.fetch.bind(self),blobs=[],pendingCache=new Set();
+        let enginePromise,library,cache,lastProgress=0,cacheFailed=false,active=null,queue=[],working=false;
+        const modelProgress=new Map();
+        const notify=data=>self.postMessage(data);
+        const progress=data=>{const now=Date.now();if(now-lastProgress>200||data.phase==='ready'){lastProgress=now;notify({type:'progress',...data});}};
+        const cancelled=job=>job.cancelled;
+        async function cachedFetch(url) {
+            if(typeof url!=='string')url=url.url;
+            if(blobs.includes(url))return nativeFetch(url);
+            const trusted=assets.some(([name])=>url===runtimeBase+name)||modelFiles.some(name=>url===modelBase+name);
+            if(!trusted)throw Error('Unexpected model resource');
+            const saved=await cache.match(url);if(saved)return saved;
+            progress({phase:'download',file:url.split('/').at(-1)});
+            const response=await nativeFetch(url,{credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(180000)});
+            if(!response.ok)throw Error('Model download failed: HTTP '+response.status);
+            const writing=cache.put(url,response.clone()).catch(()=>{cacheFailed=true;}).finally(()=>pendingCache.delete(writing));
+            pendingCache.add(writing);return response;
+        }
+        function blobURL(bytes,type) {const url=URL.createObjectURL(new Blob([bytes],{type}));blobs.push(url);return url;}
+        async function runtimeAsset([name,expected]) {
+            const url=runtimeBase+name,response=await cachedFetch(url),bytes=await response.arrayBuffer();
+            const digest=await crypto.subtle.digest('SHA-256',bytes);
+            const actual=[...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('');
+            if(actual!==expected){await cache.delete(url);throw Error('Runtime integrity check failed');}
+            return bytes;
+        }
+        async function engine() {
+            if(!enginePromise)enginePromise=(async()=>{
+                cache=await caches.open('cbp-local-en-ru-v1');
+                const [runtime,module,wasm]=await Promise.all(assets.map(runtimeAsset));
+                library=await import(blobURL(runtime,'text/javascript'));
+                const env=library.env;env.allowLocalModels=false;env.useBrowserCache=false;
+                env.backends.onnx.wasm.numThreads=1;env.backends.onnx.wasm.proxy=false;
+                env.backends.onnx.wasm.wasmPaths={mjs:blobURL(module,'text/javascript'),wasm:blobURL(wasm,'application/wasm')};
+                // Only fixed model assets can leave this worker; lyric text is never sent.
+                self.fetch=cachedFetch;
+                const pipe=await library.pipeline('translation',model,{device:'wasm',dtype:'q8',revision,progress_callback:data=>{
+                    if(data.status==='progress'&&data.file?.endsWith('.onnx')){
+                        modelProgress.set(data.file,data.progress);
+                        progress({phase:'model',progress:[...modelProgress.values()].reduce((sum,value)=>sum+value,0)/2});
+                    }
+                    else if(data.status==='initiate')progress({phase:'model'});
+                }});
+                await Promise.all([...pendingCache]);
+                progress({phase:'ready',cacheFailed});return pipe;
+            })();
+            return enginePromise;
+        }
+        async function drain() {
+            if(working)return;working=true;
+            try{
+                while(queue.length){
+                    const job=queue.shift();if(cancelled(job))continue;active=job;
+                    try{
+                        const pipe=await engine();if(cancelled(job))continue;
+                        const stop=new library.InterruptableStoppingCriteria();job.stop=stop;
+                        const criteria=new library.StoppingCriteriaList();criteria.push(stop);
+                        const result=await pipe(job.text,{max_new_tokens:128,stopping_criteria:criteria,num_beams:3});
+                        if(!cancelled(job))notify({type:'result',id:job.id,text:result?.[0]?.translation_text});
+                    }catch(error){if(!cancelled(job))notify({type:'error',id:job.id,message:String(error.message||error).slice(0,300)});}
+                    finally{active=null;}
+                }
+            }finally{working=false;}
+        }
+        self.onmessage=({data})=>{
+            if(data.type==='cancel'){
+                const queued=queue.find(job=>job.id===data.id);if(queued)queued.cancelled=true;
+                if(active?.id===data.id){active.cancelled=true;active.stop?.interrupt();}
+            }else if(data.type==='translate'&&Number.isSafeInteger(data.id)&&typeof data.text==='string'&&data.text.length<=2000){
+                queue.push({id:data.id,text:data.text,cancelled:false});drain();
+            }
+        };
+    }
+
+    Object.assign(APP,{
+        closeLocalTranslator() {
+            clearTimeout(this.localUnloadTimer);this.localUnloadTimer=null;
+            this.localWorker?.terminate();this.localWorker=null;this.localWorkerReady=false;
+            if(this.localWorkerURL)URL.revokeObjectURL(this.localWorkerURL);this.localWorkerURL=null;
+            for(const entry of this.localPending?.values()||[])entry.reject(Error('Local translator closed'));
+            this.localPending?.clear();
+        },
+        scheduleLocalUnload() {
+            if(!this.localWorker)return;clearTimeout(this.localUnloadTimer);
+            this.localUnloadTimer=setTimeout(()=>this.closeLocalTranslator(),60000);
+        },
+        getLocalTranslator() {
+            clearTimeout(this.localUnloadTimer);this.localUnloadTimer=null;
+            if(this.localWorker)return this.localWorker;
+            this.localPending=new Map();
+            this.localWorkerURL=URL.createObjectURL(new Blob(['('+localTranslatorWorker.toString()+')();'],{type:'text/javascript'}));
+            const worker=new Worker(this.localWorkerURL,{type:'module',name:'cbp-local-translation'});this.localWorker=worker;
+            worker.onmessage=({data})=>{
+                if(this.localWorker!==worker)return;
+                if(data.type==='progress'){
+                    if(data.phase==='ready'){this.localWorkerReady=true;this.localCacheFailed=!!data.cacheFailed;}
+                    const status=this.lyricsPanel?.querySelector('.cbp-translation-status');
+                    if(status&&this.panelTranslationAbort&&!this.panelTranslationAbort.signal.aborted&&this.settings.lyricsTranslation&&this.settings.lyricsTranslationEngine==='local'){
+                        status.textContent=data.phase==='ready'?'Перевожу на этом компьютере…':data.phase==='download'?'Скачиваю движок локального перевода…':Number.isFinite(data.progress)?`Подготовка языковой модели · ${Math.round(data.progress)}%`:'Подготовка языковой модели…';
+                    }
+                    return;
+                }
+                const entry=this.localPending.get(data.id);if(!entry)return;
+                if(data.type==='result'&&typeof data.text==='string'&&data.text.trim()&&data.text.length<=15000)entry.resolve(data.text.trim());
+                else if(data.type==='error'){
+                    entry.reject(Error(this.localWorkerReady?'Локальный перевод не получился':'Не удалось подготовить локальную модель. Проверь интернет и нажми ↻.'));
+                    if(!this.localWorkerReady)this.closeLocalTranslator();
+                }else entry.reject(Error('Локальная модель не вернула перевод'));
+            };
+            worker.onerror=event=>{event.preventDefault();this.closeLocalTranslator();};return worker;
+        },
+        async localTranslationLine(text,signal) {
+            if(signal.aborted)throw new DOMException('Cancelled','AbortError');
+            const worker=this.getLocalTranslator(),id=this.localRequestId=(this.localRequestId||0)+1;
+            return new Promise((resolve,reject)=>{
+                let timer;
+                const cleanup=()=>{clearTimeout(timer);signal.removeEventListener('abort',abort);this.localPending.delete(id);};
+                const abort=()=>{worker.postMessage({type:'cancel',id});cleanup();reject(new DOMException('Cancelled','AbortError'));};
+                this.localPending.set(id,{resolve:value=>{cleanup();resolve(value);},reject:error=>{cleanup();reject(error);}});
+                signal.addEventListener('abort',abort,{once:true});
+                timer=setTimeout(()=>{abort();this.closeLocalTranslator();},this.localWorkerReady?60000:240000);
+                worker.postMessage({type:'translate',id,text});
+            });
+        },
+        async requestLocalRussianTranslation(text,signal) {
+            const result=[];
+            for(const chunk of this.translationChunks(text))result.push(await this.localTranslationLine(chunk,signal));
+            return result.join(' ');
         }
     });
 
@@ -1148,6 +1315,7 @@ html body #main [data-cbp-clipped] {
             this.panelObserverRoot=root;this.refreshPanelBackdrop();
         },
         clearPanelVideo() {
+            clearTimeout(this.panelContrastTimer);this.panelContrastTimer=null;
             if(this.panelVideo){this.panelVideo.pause();this.panelVideo.srcObject=null;this.panelVideo.removeAttribute('src');this.panelVideo.load();this.panelVideo.remove();this.panelVideo=null;}
             this.panelVideoStream?.getTracks().forEach(t=>t.stop());this.panelVideoStream=null;
             if(this.panelVideoObjectURL)URL.revokeObjectURL(this.panelVideoObjectURL);this.panelVideoObjectURL=null;this.panelClipSource=null;
@@ -1156,6 +1324,9 @@ html body #main [data-cbp-clipped] {
             if(!this.panelVideo)return;
             if(document.hidden||this.settings.lyricsSource==='off'||!playerValue('isPlaying',false))this.panelVideo.pause();
             else this.panelVideo.play().catch(()=>{});
+            this.updatePanelContrast();
+            clearTimeout(this.panelContrastTimer);
+            if(!document.hidden&&this.settings.lyricsSource!=='off'&&playerValue('isPlaying',false))this.panelContrastTimer=setTimeout(()=>this.syncPanelBackdropPlayback(),1800);
         },
         async refreshPanelBackdrop(force=false) {
             if(!this.panelBackdrop)return;
@@ -1166,7 +1337,8 @@ html body #main [data-cbp-clipped] {
             this.panelBackdrop.replaceChildren();this.panelBackdrop.dataset.source='cover';
             if(!enabled){this.panelCanvasPending=false;return;}
             const meta=item?.metadata||{},cover=panelMediaURL(meta.image_xlarge_url||meta.image_large_url||meta.image_url||item?.album?.images?.[0]?.url);
-            if(cover){const img=document.createElement('img');img.alt='';img.src=cover;this.panelBackdrop.append(img);}
+            if(cover){const img=document.createElement('img');img.alt='';img.crossOrigin='anonymous';img.onload=()=>{if(this.panelBackdrop.contains(img))this.updatePanelContrast();};img.src=cover;this.panelBackdrop.append(img);}
+            this.updatePanelContrast();
             if(this.panelObserverRoot)this.panelVideoObserver.observe(this.panelObserverRoot,{childList:true,subtree:true,attributes:true,attributeFilter:['src']});
             const current=()=>!signal.aborted&&Spicetify.Player.data?.item?.uri===uri&&this.settings.lyricsSource!=='off';
             if(!/^spotify:track:[a-zA-Z0-9]+$/.test(uri)){this.panelCanvasPending=false;return;}
@@ -1189,6 +1361,31 @@ html body #main [data-cbp-clipped] {
         newPanelVideo() {
             const video=document.createElement('video');video.muted=true;video.playsInline=true;video.loop=true;video.preload='auto';video.disablePictureInPicture=true;
             this.panelBackdrop.append(video);this.panelVideo=video;return video;
+        },
+        updatePanelContrast() {
+            if(!this.panelBackdrop||this.settings.lyricsSource==='off')return;
+            const media=this.panelVideo?.readyState>=2?this.panelVideo:this.panelBackdrop.querySelector('img');
+            let pixels;
+            try{
+                if(!media)throw Error('No media');
+                const w=media.videoWidth||media.naturalWidth,h=media.videoHeight||media.naturalHeight;if(!w||!h)throw Error('Not ready');
+                const canvas=this.panelContrastCanvas||=document.createElement('canvas');canvas.width=24;canvas.height=48;
+                const ctx=canvas.getContext('2d',{willReadFrequently:true}),ratio=(this.lyricsPanel.clientWidth||360)/(this.lyricsPanel.clientHeight||900);
+                const cropW=Math.min(w,h*ratio),cropH=Math.min(h,w/ratio);
+                ctx.drawImage(media,(w-cropW)/2,(h-cropH)/2,cropW,cropH,0,0,24,48);pixels=ctx.getImageData(0,0,24,48).data;
+            }catch{}
+            const lum=rgb=>{const v=rgb.map(c=>{c/=255;return c<=.04045?c/12.92:((c+.055)/1.055)**2.4;});return .2126*v[0]+.7152*v[1]+.0722*v[2];};
+            let mean=0;if(pixels)for(let i=0;i<pixels.length;i+=4)mean+=lum([...pixels.slice(i,i+3)])/(pixels.length/4);
+            const ink=this.settings.colorMode==='custom'?this.settings.color:(pixels&&mean>.45?'#10151d':'#f8faff');
+            const rgb=ink.match(/[0-9a-f]{2}/gi).map(x=>parseInt(x,16)),light=lum(rgb)>.18,scrim=light?0:255;
+            let alpha=pixels?0:.65;
+            if(pixels)for(alpha=0;alpha<.78;alpha+=.03){
+                const scores=[];for(let i=0;i<pixels.length;i+=16){const bg=[0,1,2].map(n=>pixels[i+n]*(1-alpha)+scrim*alpha),text=bg.map((c,n)=>c*.26+rgb[n]*.74),a=lum(bg),b=lum(text);scores.push((Math.max(a,b)+.05)/(Math.min(a,b)+.05));}
+                scores.sort((a,b)=>a-b);if(scores[Math.floor(scores.length*.08)]>=4.5)break;
+            }
+            this.lyricsPanel.style.setProperty('--cbp-panel-ink',ink);
+            this.lyricsPanel.style.setProperty('--cbp-panel-scrim',`rgba(${scrim},${scrim},${scrim},${alpha.toFixed(2)})`);
+            this.lyricsPanel.style.textShadow=light?'0 1px 3px #000a':'0 1px 2px #ffffff60';
         },
         async playPanelURL(url,kind,signal) {
             this.clearPanelVideo();const video=this.newPanelVideo();video.style.opacity='0';
@@ -1326,6 +1523,6 @@ html body #main [data-cbp-clipped] {
         try { await APP.init(); } catch (error) { APP.report(error); window.__cbpLoaded = false; }
     }
     // A small diagnostic surface for support and deterministic tests.
-    window.CBP = { version: "1.1.0", app: APP, normalize, cropRect, analyzePixels, luminance };
+    window.CBP = { version: "1.2.1", app: APP, normalize, cropRect, analyzePixels, luminance };
     boot();
 })();
