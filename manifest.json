@@ -1,0 +1,15 @@
+[
+  {
+    "name": "Custom Background Native",
+    "description": "Custom wallpapers, glass panels, music videos and a lyrics sidebar with Russian translation.",
+    "preview": "marketplace-preview.jpg",
+    "main": "custom-bg.js",
+    "readme": "README.md",
+    "tags": [
+      "background",
+      "lyrics",
+      "canvas",
+      "translation"
+    ]
+  }
+]
