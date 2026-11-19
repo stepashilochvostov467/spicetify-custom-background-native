@@ -3,7 +3,7 @@
 Свой Spotify: фоны, стеклянные панели, файлы оформлений и тексты песен.
 Your Spotify: custom backgrounds, glass panels, appearance files and lyrics.
 
-[Русский](#русский) · [English](#english) · **1.5.2**
+[Русский](#русский) · [English](#english) · **1.10.1**
 
 Версия **без Spicy Lyrics**. [Основной проект с Spicy Lyrics и подсветкой слогов](https://github.com/stepashilochvostov467/spicetify-custom-background).
 
@@ -19,7 +19,7 @@ Your Spotify: custom backgrounds, glass panels, appearance files and lyrics.
 - Свой или автоматически подобранный цвет текста, кнопок и иконок. У иконок контрастная тень, у кнопки воспроизведения — светлый или тёмный значок по цвету заливки.
 - Полноразмерная боковая панель текстов Spotify: подсветка текущей строки, плавная прокрутка и перемотка нажатием.
 - Русский перевод под оригиналом: общая подсветка и прокрутка, выбранный цвет текста и локальный кэш переводов.
-- Фон панели текста: Canvas → доступное видео текущего трека → обложка. Видео заполняет панель без искажения пропорций и градиента, обложка под ним скрыта. Цвет текста подстраивается под фон самой панели. Затемнение регулируется отдельно в настройках текста; по умолчанию 12%, можно поставить 0%.
+- Фон панели текста выбирается для каждой песни. В режиме «Авто» порядок такой — клип → Canvas → обложка. Можно выбрать конкретный источник или поставить свой ролик.
 - Настройки обложек, размеров текста, строк и элементов плеера.
 - Скрытие подкастов и аудиокниг вместе с кнопками их разделов, рекомендаций, магазина и штатной правой панели.
 - Alt+P: сохранить текущее оформление в JSON или импортировать файл с предпросмотром. Файл включает фон и все настройки; каталога встроенных и сохранённых стилей нет.
@@ -40,6 +40,10 @@ spicetify apply
 ```
 
 **Alt+B** — настройки, **Alt+V** — открыть или закрыть текст песни, **Alt+P** — импорт и экспорт текущего оформления. Все разделы настроек при открытии свёрнуты; изменения сохраняются автоматически. Кнопка «Сохранить в файл» выгружает JSON с фоном и всеми настройками. Старые файлы пресетов по-прежнему импортируются.
+
+### Синхронизация текста с клипом
+
+Расширение сначала ищет тайминги видеоверсии. Если доступны только тайминги аудиоверсии, наведи курсор на звучащую строку и нажми **Alt+S**. Панель привяжет строку к текущему моменту, а клип продолжит играть. То же можно сделать через меню «Фон» → «Синхронизировать текст». После монтажной склейки можно добавить ещё одну точку. Привязки хранятся локально для каждого клипа.
 
 ### Перевод песен
 
@@ -69,7 +73,7 @@ spicetify apply
 - Custom or automatically selected text, button and icon colors, contrast halos, and a light/dark foreground for the play button.
 - Full-height native Spotify lyric sidebar with line highlighting, smooth following and click-to-seek.
 - Russian translation below each original line, sharing its highlight, timing and selected color, with a local translation cache.
-- Sidebar backgrounds: Canvas → accessible current-track video → static cover. Videos fill the panel with centered cropping, preserving proportions without gradients or an underlying cover. Text color adapts to the sidebar media. Sidebar dimming is independent: 12% by default, adjustable down to 0%.
+- Choose sidebar media per song. Auto prefers a music video, then Canvas, then cover art. You can select a source or add a local video.
 - Cover, typography, track row and player sizing controls.
 - Hide podcasts and audiobooks including their navigation chips, recommendations, store links and Spotify's native sidebar.
 - Alt+P: export the current appearance to JSON or import a file with preview. Files contain the background and all settings; there is no built-in or saved preset catalog.
@@ -81,6 +85,10 @@ A self-contained Spicetify extension: no companion extensions or separate lyric 
 Install desktop Spotify and [Spicetify](https://spicetify.app/docs/getting-started/). Download [custom-bg.js](https://raw.githubusercontent.com/stepashilochvostov467/spicetify-custom-background-native/main/custom-bg.js), copy it to Spicetify's Extensions directory, and run the commands above.
 
 **Alt+B** opens settings; **Alt+V** toggles lyrics; **Alt+P** opens appearance import/export. Settings sections open collapsed and changes save automatically. Export writes a JSON file containing all current settings and the wallpaper. Old preset files remain importable.
+
+### Sync lyrics with a music video
+
+The extension checks for video-specific timings first. When using timings from the audio track, hover over the line you hear and press **Alt+S**. The sidebar anchors the line to the current video position without seeking. You can also use the sidebar background menu to enter sync mode. Add another anchor after an edit if needed. Anchors are saved locally for each video.
 
 ### Russian translation
 
@@ -110,8 +118,49 @@ npm test
 
 `npm run test:local` additionally downloads the actual translation model into an ignored test browser profile, verifies inference and UI responsiveness, then starts a fresh worker with networking disabled. Standard tests mock inference and do not download model weights.
 
-The build produces `custom-bg.js` and checks its syntax. Isolated browser tests cover native lyrics, line timing, stale requests, seek/pause behavior, Canvas fallback, video layout, preset import/export and idle callbacks. Tests run without companion extensions and do not guarantee compatibility with every Spotify release.
+The build minifies `custom-bg.js` and checks its syntax. Isolated browser tests cover native lyrics, line timing, stale requests, seek/pause behavior, Canvas fallback, video layout, preset import/export and idle callbacks. Tests run without companion extensions and do not guarantee compatibility with every Spotify release.
 
 [Report a bug / Сообщить об ошибке](https://github.com/stepashilochvostov467/spicetify-custom-background-native/issues) · [Contributing](CONTRIBUTING.md) · [Roadmap](ROADMAP.md)
 
 MIT License. Independent project, not affiliated with Spotify. Local model/runtime credits and pinned versions: [THIRD_PARTY.md](THIRD_PARTY.md).
+
+
+### Видео отдельно от текста / Separate media and lyrics
+
+В настройках правой панели выбери расположение видео: **Над текстом**, **Под текстом** или **Фоном · прежний вид**. По умолчанию видео сверху, текст и перевод — ниже на отдельной тёмной поверхности. Видео показывается целиком, без обрезки и растягивания. Шрифт, тайминги, перевод и горячие клавиши сохраняются.
+
+Choose **Above lyrics**, **Below lyrics**, or the previous **Background** layout in sidebar settings. The default separates the full uncropped video preview above the scrolling original/translation pairs. Fonts, timing, translation and shortcuts remain unchanged. Layout selection is saved and included in appearance exports.
+
+
+### Закреплённая строка / Fixed lyric anchor
+
+В основном виде текущая строка закреплена у начала нижней трети окна. Следующие строки идут ниже, прошедшие скрываются. Верхняя область заполнена медиа с мягким продолжением его цветов и переходом в тёмный фон текста. Панель доходит до краёв окна, постоянные технические надписи убраны. Кнопки RU, обновления и закрытия остаются вверху; пояснение переводчика доступно при наведении на RU. Если у текста нет таймингов, остаётся ручная прокрутка.
+
+The main layout pins the playing original/translation pair at two thirds of the window height and hides previous rows. Media and static sampled ambient colors fade into the dark lyric surface. The sidebar reaches the window edges with compact controls. Untimed lyrics retain manual scrolling.
+
+
+### История: отключение старой предзагрузки / Historical rollback
+
+В предыдущей сборке предзагрузка была отключена после сообщений о пропадании текста при переключении песен. Текст и перевод снова загружаются обычным путём для текущего трека. Экспериментальные исходники сохранены, но не включаются в custom-bg.js. Оформление, закрепление строки и прозрачные кнопки сохранены.
+
+Lookahead was excluded from the previous release following missing-lyrics reports on track changes. Foreground loading is restored. Experimental source files remain for further investigation; current layout and transparent controls are preserved.
+
+## 1.9.0 — предзагрузка и приоритет перевода / Lookahead and translation priority
+
+Две следующие песни: текст Spotify, доступные в кэше тайминги Spicy (только Full), Canvas до 32 МиБ суммарно и первые 12 уникальных переводимых строк. Основная загрузка не ждёт незавершённую предзагрузку. Текущая строка и следующие имеют приоритет, в том числе после перемотки. Кэш переводов: до 500 записей и 2 МиБ UTF-8, 30 дней. Тяжёлые экспериментальные модели не подключены. Новый текст Spicy по-прежнему зависит от его собственного загрузчика.
+
+Preloads the next two songs: Spotify text, already cached Spicy timing (Full only), Canvas with a 32 MiB RAM cache, and the first 12 unique translatable lines. Foreground loading never waits for unfinished lookahead. Translation prioritizes the playing line and upcoming lines after seeking. Persistent translation cache: 500 entries / 2 MiB UTF-8 / 30 days. Experimental large models remain disconnected. Uncached Spicy lyrics still depend on its own loader.
+
+## 1.9.1 — английский запас перевода / English translation reserve
+
+Предзагрузка перевода ищет две следующие английские песни среди десяти ближайших уникальных треков. Русские, другие языки и песни без текста не занимают место в этом запасе и не передаются локальному переводчику. Для ближайших двух песен любого языка по-прежнему готовятся текст и Canvas. Поиск прекращается после двух английских песен; при выключенном переводе остаётся обычный просмотр двух треков. Лимиты кэшей не увеличены.
+
+Translation lookahead selects the next two English songs within ten upcoming unique tracks. Russian, other languages and unavailable lyrics do not occupy translation slots. Lyrics and Canvas still prepare for the immediate two tracks in any language. Cache limits remain unchanged.
+
+## 1.10.0 — Карта песни / Song map
+
+При открытой панели текста над полосой прогресса появляется карта синхронизированной песни. Нажатие на раздел перематывает; кнопка «⋯» или правый клик открывает редактор времени (секунды) и названий. Можно добавить отметку на текущем времени, удалить отметку, сохранить или вернуть автоматическую разметку. До 100 ручных карт по 40 разделов хранятся локально.
+
+Автоматика ищет повторяющиеся пары разных строк и паузы между известным концом вокальной строки и следующей. Подписи «Повтор» и «Пауза в тексте» не являются гарантированными припевами и инструменталами. Для текста без таймингов карта не строится. Анализа аудио, новых моделей и фоновых таймеров нет.
+
+With lyrics open, a song map appears above the progress bar. Click a section to seek; use «⋯» or right-click to edit timestamps and labels. Manual maps persist locally (100 songs, 40 sections each). Auto markers identify repeated two-line passages and gaps with known vocal-end timing; they do not claim semantic chorus/instrumental detection. Untimed lyrics are unsupported. No audio analysis or new model.

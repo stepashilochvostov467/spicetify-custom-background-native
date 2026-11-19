@@ -39,6 +39,8 @@ fs.mkdirSync('test-results',{recursive:true});
         assert.ok((await page.locator('.cbp-original').textContent()).includes('bright green tree'));
         console.log(JSON.stringify({offlineTranslationMs:Date.now()-offlineStart,text:await page.locator('.cbp-translation').textContent(),offlineRequests:requests.length-before}));
         const explicit=await page.evaluate(async()=>{const source='This confusion is fucking me up.';const raw=await CBP.app.requestLocalRussianTranslation(source,new AbortController().signal);return CBP.app.translationWithTone(source,raw);});console.log(JSON.stringify({explicitIdiomTranslation:explicit}));assert.ok(/[а-яё]/i.test(explicit));
+        const idioms=await page.evaluate(async()=>{const a=CBP.app,signal=new AbortController().signal;return {car:a.translationWithTone("The driver is doin' donuts in the parking lot.",await a.requestLocalRussianTranslation("The driver is doin' donuts in the parking lot.",signal)),jewels:await a.requestLocalRussianTranslation('The gemstones in my teeth are going dumb.',signal)};});
+        console.log(JSON.stringify({contextualIdioms:idioms}));assert.ok(!/пончик/i.test(idioms.car));assert.ok(!/туп/i.test(idioms.jewels));
         await page.evaluate(()=>{CBP.app.settings.lyricsSource='off';CBP.app.settings.lyricsTranslation=false;CBP.app.render();CBP.app.closeLocalTranslator();});
         assert.deepEqual(errors,[]);
         console.log('Real local model: online setup, UI responsiveness, no lyric transmission, fresh-worker offline translation passed');
